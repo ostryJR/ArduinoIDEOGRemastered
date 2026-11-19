@@ -67,7 +67,13 @@ public class EditorConsole extends JScrollPane {
   public EditorConsole(Base base) {
     document = new DefaultStyledDocument();
 
-    consoleTextPane = new JTextPane(document);
+    consoleTextPane = new JTextPane(document) {
+      // Remastered: follow the viewport width when wrapping is enabled
+      @Override
+      public boolean getScrollableTracksViewportWidth() {
+        return Boolean.TRUE.equals(wrapping) || super.getScrollableTracksViewportWidth();
+      }
+    };
     consoleTextPane.setEditable(false);
     DefaultCaret caret = (DefaultCaret) consoleTextPane.getCaret();
     caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
@@ -98,10 +104,11 @@ public class EditorConsole extends JScrollPane {
     StyleConstants.setBold(stdErrStyle, actualFont.isBold());
     StyleConstants.setItalic(stdErrStyle, actualFont.isItalic());
 
-    JPanel noWrapPanel = new JPanel(new BorderLayout());
+    noWrapPanel = new JPanel(new BorderLayout());
     noWrapPanel.add(consoleTextPane);
 
-    setViewportView(noWrapPanel);
+    // Remastered: wrapping is optional (Preferences > Remastered)
+    applyWrap();
     getVerticalScrollBar().setUnitIncrement(7);
 
     // calculate height of a line of text in pixels
@@ -117,7 +124,34 @@ public class EditorConsole extends JScrollPane {
       base.addEditorFontResizeListeners(consoleTextPane);
   }
 
+  private JPanel noWrapPanel;
+  private Boolean wrapping;
+
+  /**
+   * Remastered: a JTextPane placed directly in the viewport wraps to its
+   * width; inside a plain JPanel (stock behaviour) it never wraps.
+   */
+  private void applyWrap() {
+    boolean wrap = PreferencesData.getBoolean("console.wrap", false);
+    if (wrapping != null && wrapping == wrap) {
+      return;
+    }
+    wrapping = wrap;
+    if (wrap) {
+      noWrapPanel.remove(consoleTextPane);
+      setViewportView(consoleTextPane);
+      setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
+    } else {
+      noWrapPanel.add(consoleTextPane);
+      setViewportView(noWrapPanel);
+      setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    }
+    revalidate();
+    repaint();
+  }
+
   public void applyPreferences() {
+    applyWrap();
 
     // Update the console text pane font from the preferences.
     Font consoleFont = Theme.getFont("console.font");

@@ -762,6 +762,8 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JComboBox<String> plotterLabelsCombo;
   private javax.swing.JLabel plotterHint;
   private javax.swing.JCheckBox nativeArmBox;
+  private javax.swing.JCheckBox editorWrapBox;
+  private javax.swing.JCheckBox consoleWrapBox;
   private javax.swing.JLabel fontSizeLabel;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
@@ -827,6 +829,12 @@ public class Preferences extends javax.swing.JDialog {
     c.gridwidth = 1;
     c.gridx = 0; c.gridy = row; panel.add(editorFontLabel, c);
     c.gridx = 1; panel.add(editorFontCombo, c);
+    row++;
+    editorWrapBox = new JCheckBox(tr("Wrap long lines in the editor"));
+    c.gridx = 0; c.gridy = row; panel.add(editorWrapBox, withSpan(c, 4));
+    row++;
+    consoleWrapBox = new JCheckBox(tr("Wrap long lines in the console"));
+    c.gridx = 0; c.gridy = row; panel.add(consoleWrapBox, withSpan(c, 4));
 
     row++;
     c.gridx = 0; c.gridy = row; panel.add(sectionLabel(tr("Serial Plotter")), withSpan(c, 4));
@@ -921,6 +929,8 @@ public class Preferences extends javax.swing.JDialog {
     PreferencesData.set(PlotterFormat.PREF_SEPARATOR, ((PlotterFormat.Separator) plotterSeparatorCombo.getSelectedItem()).key);
     PreferencesData.set(PlotterFormat.PREF_CUSTOM, plotterCustomField.getText());
     PreferencesData.set(PlotterFormat.PREF_LABEL, plotterLabelsCombo.getSelectedIndex() == 1 ? "=" : ":");
+    PreferencesData.setBoolean("editor.wrap", editorWrapBox.isSelected());
+    PreferencesData.setBoolean("console.wrap", consoleWrapBox.isSelected());
     if (cc.arduino.remastered.NativeArmToolchain.isSupportedHost()) {
       PreferencesData.setBoolean(cc.arduino.remastered.NativeArmToolchain.PREF, nativeArmBox.isSelected());
     }
@@ -991,6 +1001,8 @@ public class Preferences extends javax.swing.JDialog {
     plotterCustomField.setEnabled(PlotterFormat.separator() == PlotterFormat.Separator.CUSTOM);
     plotterLabelsCombo.setSelectedIndex(PlotterFormat.labelSeparator() == '=' ? 1 : 0);
     nativeArmBox.setSelected(cc.arduino.remastered.NativeArmToolchain.isEnabled());
+    editorWrapBox.setSelected(PreferencesData.getBoolean("editor.wrap", false));
+    consoleWrapBox.setSelected(PreferencesData.getBoolean("console.wrap", false));
 
     try {
       int scale = PreferencesData.getInteger("gui.scale", -1);

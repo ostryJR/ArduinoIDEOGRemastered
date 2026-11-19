@@ -105,6 +105,10 @@ editor.font.macosx = JetBrains Mono,plain,13
 # (Tools > Native ARM Compiler); downloaded once on first use
 remastered.native_arm_gcc=true
 
+# Remastered: soft-wrap long lines (Preferences > Remastered)
+editor.wrap=false
+console.wrap=false
+
 # anti-aliased text, turned on by default
 editor.antialias=true
 

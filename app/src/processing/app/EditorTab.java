@@ -289,6 +289,12 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
   }
   
   public void applyPreferences() {
+    // Remastered: optional soft wrapping of long lines (Preferences > Remastered)
+    boolean wrap = PreferencesData.getBoolean("editor.wrap", false);
+    if (textarea.getLineWrap() != wrap) {
+      textarea.setWrapStyleWord(true); // break at word boundaries (set first)
+      textarea.setLineWrap(wrap);
+    }
     textarea.setCodeFoldingEnabled(PreferencesData.getBoolean("editor.code_folding"));
     scrollPane.setFoldIndicatorEnabled(PreferencesData.getBoolean("editor.code_folding"));
     scrollPane.setLineNumbersEnabled(PreferencesData.getBoolean("editor.linenumbers"));
