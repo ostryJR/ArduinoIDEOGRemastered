@@ -33,6 +33,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.BorderFactory;
@@ -57,6 +59,7 @@ import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import cc.arduino.UpdatableBoardsLibsFakeURLsHandler;
+import cc.arduino.remastered.autocomplete.AutoCompleteSupport;
 import processing.app.helpers.DocumentTextChangeListener;
 import processing.app.syntax.ArduinoTokenMakerFactory;
 import processing.app.syntax.PdeKeywords;
@@ -75,6 +78,8 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
   protected boolean modified;
   /** Is external editing mode currently enabled? */
   protected boolean external;
+  /** Remastered: code completion for this tab */
+  private AutoCompleteSupport autoComplete;
   
   /**
    * Create a new EditorTab
@@ -190,6 +195,15 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
     ToolTipManager.sharedInstance().registerComponent(textArea);
 
     configurePopupMenu(textArea);
+
+    // Remastered: code completion (Preferences > Remastered)
+    autoComplete = AutoCompleteSupport.install(textArea, () -> {
+      List<String> texts = new ArrayList<>();
+      for (EditorTab tab : editor.getTabs()) {
+        texts.add(tab.getTextArea().getText());
+      }
+      return texts;
+    });
     return textArea;
   }
 
@@ -289,6 +303,7 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
   }
   
   public void applyPreferences() {
+    autoComplete.setEnabled(PreferencesData.getBoolean("editor.autocomplete", true));
     // Remastered: optional soft wrapping of long lines (Preferences > Remastered)
     boolean wrap = PreferencesData.getBoolean("editor.wrap", false);
     if (textarea.getLineWrap() != wrap) {

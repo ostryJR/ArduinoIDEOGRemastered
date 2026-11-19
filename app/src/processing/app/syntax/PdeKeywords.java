@@ -65,6 +65,10 @@ public class PdeKeywords {
   // lookup table that maps keywords to their html reference pages
   private final Map<String, String> keywordToReference;
 
+  // Remastered: which keywords.txt each keyword came from (library name, or
+  // "" for the IDE's and the board platform's own lists), for autocomplete
+  private final Map<String, String> keywordSource = new HashMap<>();
+
   public PdeKeywords() {
     this.keywordTokenType = new TokenMap();
     this.keywordOldToken = new HashMap<>();
@@ -83,16 +87,16 @@ public class PdeKeywords {
    */
   public void reload() {
     try {
-      parseKeywordsTxt(new File(BaseNoGui.getContentFile("lib"), "keywords.txt"));
+      parseKeywordsTxt(new File(BaseNoGui.getContentFile("lib"), "keywords.txt"), "");
       TargetPlatform tp = BaseNoGui.getTargetPlatform();
       if (tp != null) {
         File platformKeywords = new File(tp.getFolder(), "keywords.txt");
-        if (platformKeywords.exists()) parseKeywordsTxt(platformKeywords);
+        if (platformKeywords.exists()) parseKeywordsTxt(platformKeywords, "");
       }
       for (UserLibrary lib : BaseNoGui.librariesIndexer.getInstalledLibraries()) {
         File keywords = new File(lib.getInstalledFolder(), "keywords.txt");
         if (keywords.exists()) {
-          parseKeywordsTxt(keywords);
+          parseKeywordsTxt(keywords, lib.getName());
         }
       }
     } catch (Exception e) {
@@ -101,7 +105,7 @@ public class PdeKeywords {
     }
   }
 
-  private void parseKeywordsTxt(File input) throws Exception {
+  private void parseKeywordsTxt(File input, String source) throws Exception {
     BufferedReader reader = null;
     try {
       reader = new BufferedReader(new InputStreamReader(new FileInputStream(input)));
@@ -121,6 +125,8 @@ public class PdeKeywords {
         if (keyword.startsWith("\\#")) {
           keyword = keyword.replace("\\#", "#");
         }
+
+        keywordSource.putIfAbsent(keyword, source);
 
         if (pieces.length >= 2) {
           keywordOldToken.put(keyword, pieces[1]);
@@ -189,5 +195,25 @@ public class PdeKeywords {
 
   public int getTokenType(char[] array, int start, int end) {
     return keywordTokenType.get(array, start, end);
+  }
+
+  /**
+   * Remastered: every keyword with its token type name (DATA_TYPE, FUNCTION,
+   * RESERVED_WORD, ...), as used for coloring. Read-only view.
+   */
+  public Map<String, String> getKeywordTypes() {
+    return java.util.Collections.unmodifiableMap(keywordTokenTypeAsString);
+  }
+
+  /** Remastered: RSyntaxTextArea token type for a type name from {@link #getKeywordTypes()}. */
+  public static int tokenTypeFor(String tokenTypeAsString) {
+    Integer type = KNOWN_TOKEN_TYPES.get(tokenTypeAsString);
+    return type != null ? type : TokenTypes.FUNCTION;
+  }
+
+  /** Remastered: library the keyword was declared by, or "" for core/platform keywords. */
+  public String getKeywordSource(String keyword) {
+    String source = keywordSource.get(keyword);
+    return source != null ? source : "";
   }
 }

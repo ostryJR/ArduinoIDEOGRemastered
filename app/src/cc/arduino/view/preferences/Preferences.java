@@ -763,6 +763,7 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JLabel plotterHint;
   private javax.swing.JCheckBox nativeArmBox;
   private javax.swing.JCheckBox editorWrapBox;
+  private javax.swing.JCheckBox autoCompleteBox;
   private javax.swing.JCheckBox consoleWrapBox;
   private javax.swing.JLabel fontSizeLabel;
   private javax.swing.JLabel jLabel1;
@@ -835,6 +836,9 @@ public class Preferences extends javax.swing.JDialog {
     row++;
     consoleWrapBox = new JCheckBox(tr("Wrap long lines in the console"));
     c.gridx = 0; c.gridy = row; panel.add(consoleWrapBox, withSpan(c, 4));
+    row++;
+    autoCompleteBox = new JCheckBox(tr("Suggest completions while typing (Ctrl+Space shows them any time)"));
+    c.gridx = 0; c.gridy = row; panel.add(autoCompleteBox, withSpan(c, 4));
 
     row++;
     c.gridx = 0; c.gridy = row; panel.add(sectionLabel(tr("Serial Plotter")), withSpan(c, 4));
@@ -930,6 +934,7 @@ public class Preferences extends javax.swing.JDialog {
     PreferencesData.set(PlotterFormat.PREF_CUSTOM, plotterCustomField.getText());
     PreferencesData.set(PlotterFormat.PREF_LABEL, plotterLabelsCombo.getSelectedIndex() == 1 ? "=" : ":");
     PreferencesData.setBoolean("editor.wrap", editorWrapBox.isSelected());
+    PreferencesData.setBoolean("editor.autocomplete", autoCompleteBox.isSelected());
     PreferencesData.setBoolean("console.wrap", consoleWrapBox.isSelected());
     if (cc.arduino.remastered.NativeArmToolchain.isSupportedHost()) {
       PreferencesData.setBoolean(cc.arduino.remastered.NativeArmToolchain.PREF, nativeArmBox.isSelected());
@@ -1002,6 +1007,7 @@ public class Preferences extends javax.swing.JDialog {
     plotterLabelsCombo.setSelectedIndex(PlotterFormat.labelSeparator() == '=' ? 1 : 0);
     nativeArmBox.setSelected(cc.arduino.remastered.NativeArmToolchain.isEnabled());
     editorWrapBox.setSelected(PreferencesData.getBoolean("editor.wrap", false));
+    autoCompleteBox.setSelected(PreferencesData.getBoolean("editor.autocomplete", true));
     consoleWrapBox.setSelected(PreferencesData.getBoolean("console.wrap", false));
 
     try {

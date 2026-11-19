@@ -91,6 +91,10 @@ public class SketchTextArea extends RSyntaxTextArea {
     pdeKeywords = keywords;
   }
 
+  public PdeKeywords getKeywords() {
+    return pdeKeywords;
+  }
+
   private void installFeatures() throws IOException {
     setTheme(PreferencesData.get("editor.syntax_theme", "default"));
 

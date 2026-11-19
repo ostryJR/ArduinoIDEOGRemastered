@@ -26,6 +26,14 @@ Compared with upstream 1.8.19:
 - **Edit → Editor Font** lets you choose JetBrains Mono (bundled, SIL OFL),
   SF Mono (loaded from macOS) or Monaco. The change applies live to every
   window.
+- **Code completion.** While you type, a list drawn like the editor itself (same
+  font, each word colored as the syntax highlighting would color it) suggests
+  Arduino functions and constants, keywords of your installed libraries, the
+  sketch's own variables and functions, and header names after `#include <`.
+  It opens after 3 letters and a short pause, or any time with **Ctrl+Space**.
+  ↑/↓ choose, Enter or Tab insert (functions get `()` with the cursor inside),
+  Esc closes. It never opens inside comments or strings, and it can be turned
+  off in **Preferences → Remastered**.
 - **Toolbar.** A Serial Plotter button sits next to Serial Monitor. The New and
   Open icons are clearer: a page with "+" and a folder (the old Open arrow looked
   like Upload).

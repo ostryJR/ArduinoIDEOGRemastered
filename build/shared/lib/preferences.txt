@@ -104,6 +104,8 @@ editor.font.macosx = JetBrains Mono,plain,13
 # Remastered: compile ARM boards with the native Apple Silicon GCC
 # (Tools > Native ARM Compiler); downloaded once on first use
 remastered.native_arm_gcc=true
+# code completion popup while typing (Preferences > Remastered)
+editor.autocomplete=true
 
 # Remastered: soft-wrap long lines (Preferences > Remastered)
 editor.wrap=false

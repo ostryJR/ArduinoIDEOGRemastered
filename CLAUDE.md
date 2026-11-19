@@ -48,6 +48,15 @@ The feature list is in README.md.
 - **Branding images:** the app icon `build/macosx/remastered.icns` has an orange R tag. The splash/about credit images are
   generated from the upstream originals (`git show 1.8.19:build/shared/lib/...`).
 - **Retina:** the toolbar and sketch tabs paint directly, and theme SVGs become multi-resolution images (`Theme.hiDpiImage`).
+- **Autocomplete:** `cc.arduino.remastered.autocomplete` (custom JWindow+JList popup, no fifesoft AutoComplete jar, so no
+  RSTA version coupling). Sources: `PdeKeywords.getKeywordTypes()`/`getKeywordSource()`, a regex scan of all open tabs
+  (comments/strings stripped), and `*.h` in library src folders + platform `cores/*`. Auto-opens after 3 chars + 250 ms,
+  Ctrl+Space anytime; pref `editor.autocomplete` (Remastered tab). Keys are intercepted with a KeyListener (runs before
+  RSTA key bindings), so Enter/Tab are untouched while it's closed. It doesn't auto-open when the typed word is already a
+  complete candidate (so `int`+Enter stays a newline).
+- **GUI testing without accessibility rights:** osascript/Robot keystrokes are silently dropped. Instead run a scratch
+  harness JVM that builds a `SketchTextArea` from `app/pde.jar` (set `APP_DIR` to the bundle's `Contents/app`, init
+  `PreferencesData`, reflect `Theme.init`), dispatches `KeyEvent`s in-process and screenshots its windows.
 - **Board menu:** it vanishing from Tools while the window is unfocused is upstream behavior (`removeOnWindowDeactivation`), not a bug.
 
 ## Working with the user
@@ -58,9 +67,12 @@ The feature list is in README.md.
 - **Untested:**
   - uploading native-GCC firmware to the Feather M0 (OpenDrop)
   - the Serial Plotter with live data in the new separator modes
-  - a visual check of the Preferences Remastered tab
+  - a visual check of the Preferences Remastered tab (now also has the autocomplete checkbox)
+  - autocomplete typed for real in the bundled app (verified only in the harness above)
   - opening an `.ino` from Finder
 - **Known limits:**
+  - Autocomplete is text-based: no members after `.` beyond keywords.txt names, only the first name of `int a, b;`,
+    and one-letter names are skipped.
   - Editor soft-wrap breaks mid-word inside comments (RSyntaxTextArea wraps by token).
   - GCC 12 prints a harmless newlib warning, "`_write is not implemented…`". Suppressing it was offered but not done.
 - **Housekeeping:**
