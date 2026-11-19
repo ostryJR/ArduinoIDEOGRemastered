@@ -102,6 +102,7 @@ import processing.app.debug.RunnerException;
 import processing.app.forms.PasswordAuthorizationDialog;
 import processing.app.helpers.DocumentTextChangeListener;
 import processing.app.helpers.EditorFonts;
+import cc.arduino.remastered.NativeArmToolchain;
 import processing.app.helpers.Keys;
 import processing.app.helpers.OSUtils;
 import processing.app.helpers.PreferencesMapException;
@@ -733,6 +734,34 @@ public class Editor extends JFrame implements RunnerListener {
     addTools(toolsMenu, BaseNoGui.getToolsFolder());
     File sketchbookTools = new File(BaseNoGui.getSketchbookFolder(), "tools");
     addTools(toolsMenu, sketchbookTools);
+
+    // Remastered: native arm64 GCC for ARM boards (Apple Silicon only)
+    if (NativeArmToolchain.isSupportedHost()) {
+      JCheckBoxMenuItem nativeGcc = new JCheckBoxMenuItem(tr("Native ARM Compiler (Apple Silicon)"));
+      nativeGcc.setName("menuNativeArmCompiler");
+      nativeGcc.setSelected(NativeArmToolchain.isEnabled());
+      nativeGcc.addActionListener(e -> {
+        PreferencesData.setBoolean(NativeArmToolchain.PREF, nativeGcc.isSelected());
+        statusNotice(nativeGcc.isSelected()
+          ? "ARM boards now compile with the native " + NativeArmToolchain.DISPLAY_NAME + "."
+          : "ARM boards now compile with the board package's own compiler.");
+      });
+      toolsMenu.addMenuListener(new MenuListener() {
+        @Override
+        public void menuSelected(MenuEvent e) {
+          nativeGcc.setSelected(NativeArmToolchain.isEnabled());
+        }
+
+        @Override
+        public void menuDeselected(MenuEvent e) {
+        }
+
+        @Override
+        public void menuCanceled(MenuEvent e) {
+        }
+      });
+      toolsMenu.add(nativeGcc);
+    }
 
     toolsMenu.addSeparator();
 

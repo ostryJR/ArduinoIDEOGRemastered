@@ -11,7 +11,8 @@
 The remaster keeps everything you know from 1.8: the same look, menus,
 sketches, boards and libraries. It rebuilds the IDE to run natively on Apple
 Silicon Macs, with sharper text and a faster start. You can install it next to
-the original IDE; the remastered app has a small orange **R** badge on its icon.
+the original IDE; the remastered app's icon has an orange **R** tag in the
+style of the splash screen.
 
 ## What the remaster changes
 
@@ -28,6 +29,18 @@ Compared with upstream 1.8.19:
 - **arm64 native helpers.** Serial port discovery (libserialport), the Serial
   Monitor (jSSC 2.9.6) and Auto Format (Artistic Style) are rebuilt for arm64
   (`build/macosx/native-arm64/build.sh`).
+- **Native compiling.** `arduino-builder` 1.6.1 and `ctags` are rebuilt for arm64
+  at the same versions, so their output is byte-identical to the stock tools
+  (`build/macosx/native-arm64/build-builder.sh`).
+- **Native ARM compiler (on by default).** ARM boards (SAMD, e.g. Feather M0,
+  MKR, Zero) compile with Arm's official native Apple Silicon GCC 12.3 (Arm GNU
+  Toolchain 12.3.rel1) instead of the x86_64 GCC 7/9 that board packages ship.
+  Builds are about 1.8x faster. The toolchain (110 MB download, SHA-256
+  verified) is fetched from developer.arm.com on the first ARM compile and kept
+  in `~/Library/Arduino15/remastered/toolchains/`. Turn it off with
+  **Tools → Native ARM Compiler (Apple Silicon)** to use the board package's
+  own compiler again. Firmware can differ slightly in size, because it's a
+  newer GCC than the cores were validated with. AVR boards are unaffected.
 - **Board Manager on Apple Silicon.** Native `arm64-apple-darwin` tools are
   preferred when a package offers them; otherwise x86_64 tools run through
   Rosetta 2.
@@ -41,7 +54,7 @@ Compared with upstream 1.8.19:
 
 - **Remastered branding.** The app is named "Arduino Remastered" and the window
   title reads "Arduino 1.8.19-R1 Remastered". The splash and About screens
-  credit the remaster, and the icon has an orange R badge.
+  credit the remaster, and the icon carries an orange R tag.
 
 ## Build (macOS arm64)
 
