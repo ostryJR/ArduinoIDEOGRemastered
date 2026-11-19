@@ -18,6 +18,7 @@
 
 package processing.app;
 
+import processing.app.helpers.PlotterFormat;
 import cc.arduino.packages.BoardPort;
 import processing.app.helpers.CircularBuffer;
 import processing.app.helpers.Ticks;
@@ -405,7 +406,8 @@ public class SerialPlotter extends AbstractMonitor {
         // the line only contained trimmable characters
         continue;
       }
-      String[] parts = line.split("[, \t]+");
+      // Remastered: separators are configurable (Preferences > Serial Plotter)
+      String[] parts = PlotterFormat.splitValues(line);
       if(parts.length == 0) {
         continue;
       }
@@ -417,9 +419,9 @@ public class SerialPlotter extends AbstractMonitor {
         String label = null;
         
         // column formated name value pair
-        if(parts[i].contains(":")) {
+        if(PlotterFormat.hasLabel(parts[i])) {
           // get label
-          String[] subString = parts[i].split("[:]+");
+          String[] subString = PlotterFormat.splitLabel(parts[i]);
             
           if(subString.length > 0) {
             int labelLength = subString[0].length();

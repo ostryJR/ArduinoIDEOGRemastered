@@ -39,7 +39,9 @@ import processing.app.I18n;
 import processing.app.PreferencesData;
 import processing.app.Theme;
 import processing.app.Theme.ZippedTheme;
+import processing.app.helpers.EditorFonts;
 import processing.app.helpers.FileUtils;
+import processing.app.helpers.PlotterFormat;
 import processing.app.legacy.PApplet;
 
 import javax.swing.*;
@@ -121,6 +123,14 @@ public class Preferences extends javax.swing.JDialog {
     verboseUploadBox = new javax.swing.JCheckBox();
     comboWarningsLabel = new javax.swing.JLabel();
     comboWarnings = new JComboBox(warningItems);
+    // Remastered
+    editorFontLabel = new javax.swing.JLabel();
+    editorFontCombo = new JComboBox<>(EditorFonts.CHOICES.toArray(new String[0]));
+    plotterLabel = new javax.swing.JLabel();
+    plotterSeparatorCombo = new JComboBox<>(PlotterFormat.Separator.values());
+    plotterCustomField = new javax.swing.JTextField();
+    plotterLabelsLabel = new javax.swing.JLabel();
+    plotterLabelsCombo = new JComboBox<>(PlotterFormat.LABEL_STYLES);
     additionalBoardsManagerLabel = new javax.swing.JLabel();
     additionalBoardsManagerField = new javax.swing.JTextField();
     extendedAdditionalUrlFieldWindow = new javax.swing.JButton();
@@ -210,6 +220,19 @@ public class Preferences extends javax.swing.JDialog {
 
     comboWarningsLabel.setText(tr("Compiler warnings: "));
     comboWarningsLabel.setLabelFor(comboWarnings);
+
+    editorFontLabel.setText(tr("Editor font: "));
+    editorFontLabel.setLabelFor(editorFontCombo);
+
+    plotterLabel.setText(tr("Serial Plotter values: "));
+    plotterLabel.setLabelFor(plotterSeparatorCombo);
+    plotterLabel.setToolTipText(tr("How the Serial Plotter splits each received line into values"));
+    plotterCustomField.setColumns(4);
+    plotterCustomField.setToolTipText(tr("Separator text, e.g. | or /"));
+    plotterSeparatorCombo.addItemListener(e -> plotterCustomField.setEnabled(
+      plotterSeparatorCombo.getSelectedItem() == PlotterFormat.Separator.CUSTOM));
+    plotterLabelsLabel.setText(tr("labels: "));
+    plotterLabelsLabel.setLabelFor(plotterLabelsCombo);
 
     additionalBoardsManagerLabel.setText(tr("Additional Boards Manager URLs: "));
     additionalBoardsManagerLabel.setToolTipText(tr("Enter a comma separated list of urls"));
@@ -327,10 +350,19 @@ public class Preferences extends javax.swing.JDialog {
               .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                   .addComponent(jLabel1)
-                  .addComponent(comboWarningsLabel))
+                  .addComponent(comboWarningsLabel)
+                  .addComponent(plotterLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                   .addComponent(comboWarnings, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                  .addGroup(jPanel1Layout.createSequentialGroup()
+                    .addComponent(plotterSeparatorCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(plotterCustomField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                    .addComponent(plotterLabelsLabel)
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(plotterLabelsCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                   .addGroup(jPanel1Layout.createSequentialGroup()
                     .addComponent(autoScaleCheckBox)
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -348,6 +380,7 @@ public class Preferences extends javax.swing.JDialog {
               .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                   .addComponent(comboLanguageLabel)
+                  .addComponent(editorFontLabel)
                   .addComponent(fontSizeLabel)
                   .addComponent(comboThemeLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -356,6 +389,7 @@ public class Preferences extends javax.swing.JDialog {
                     .addComponent(comboTheme, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                     .addComponent(requiresRestartLabel2))
+                  .addComponent(editorFontCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                   .addComponent(fontSizeField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                   .addGroup(jPanel1Layout.createSequentialGroup()
                     .addComponent(comboLanguage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -375,7 +409,7 @@ public class Preferences extends javax.swing.JDialog {
         .addContainerGap())
     );
 
-    jPanel1Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {comboLanguageLabel, comboWarningsLabel, fontSizeLabel, jLabel1, showVerboseLabel, comboThemeLabel});
+    jPanel1Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {comboLanguageLabel, comboWarningsLabel, fontSizeLabel, jLabel1, showVerboseLabel, comboThemeLabel, editorFontLabel, plotterLabel});
 
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -391,6 +425,10 @@ public class Preferences extends javax.swing.JDialog {
           .addComponent(comboLanguageLabel)
           .addComponent(comboLanguage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(requiresRestartLabel))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(editorFontLabel)
+          .addComponent(editorFontCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(fontSizeLabel)
@@ -416,6 +454,13 @@ public class Preferences extends javax.swing.JDialog {
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(comboWarningsLabel)
           .addComponent(comboWarnings, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(plotterLabel)
+          .addComponent(plotterSeparatorCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(plotterCustomField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(plotterLabelsLabel)
+          .addComponent(plotterLabelsCombo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(checkboxesContainer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -728,6 +773,14 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JButton extendedAdditionalUrlFieldWindow;
   private javax.swing.JCheckBox externalEditorBox;
   private javax.swing.JTextField fontSizeField;
+  // Remastered
+  private javax.swing.JLabel editorFontLabel;
+  private javax.swing.JComboBox<String> editorFontCombo;
+  private javax.swing.JLabel plotterLabel;
+  private javax.swing.JComboBox<PlotterFormat.Separator> plotterSeparatorCombo;
+  private javax.swing.JTextField plotterCustomField;
+  private javax.swing.JLabel plotterLabelsLabel;
+  private javax.swing.JComboBox<String> plotterLabelsCombo;
   private javax.swing.JLabel fontSizeLabel;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
@@ -799,6 +852,7 @@ public class Preferences extends javax.swing.JDialog {
     try {
       int newSize = Integer.parseInt(newSizeText.trim());
       String pieces[] = PApplet.split(PreferencesData.get("editor.font"), ',');
+      pieces[0] = (String) editorFontCombo.getSelectedItem(); // Remastered
       pieces[2] = String.valueOf(newSize);
       PreferencesData.set("editor.font", PApplet.join(pieces, ','));
 
@@ -818,6 +872,11 @@ public class Preferences extends javax.swing.JDialog {
 
     WarningItem warningItem = (WarningItem) comboWarnings.getSelectedItem();
     PreferencesData.set("compiler.warning_level", warningItem.getValue());
+
+    // Remastered: Serial Plotter format
+    PreferencesData.set(PlotterFormat.PREF_SEPARATOR, ((PlotterFormat.Separator) plotterSeparatorCombo.getSelectedItem()).key);
+    PreferencesData.set(PlotterFormat.PREF_CUSTOM, plotterCustomField.getText());
+    PreferencesData.set(PlotterFormat.PREF_LABEL, plotterLabelsCombo.getSelectedIndex() == 1 ? "=" : ":");
 
     PreferencesData.setBoolean("editor.linenumbers", displayLineNumbersBox.isSelected());
 
@@ -872,6 +931,18 @@ public class Preferences extends javax.swing.JDialog {
 
     Font editorFont = PreferencesData.getFont("editor.font");
     fontSizeField.setText(String.valueOf(editorFont.getSize()));
+    // Remastered: the family as written in the preference (not the resolved one)
+    String currentFamily = EditorFonts.current();
+    if (!EditorFonts.CHOICES.contains(currentFamily) && !currentFamily.isEmpty()) {
+      // keep a hand-edited font (e.g. Menlo) instead of silently replacing it
+      editorFontCombo.addItem(currentFamily);
+    }
+    editorFontCombo.setSelectedItem(currentFamily);
+
+    plotterSeparatorCombo.setSelectedItem(PlotterFormat.separator());
+    plotterCustomField.setText(PlotterFormat.customSeparator());
+    plotterCustomField.setEnabled(PlotterFormat.separator() == PlotterFormat.Separator.CUSTOM);
+    plotterLabelsCombo.setSelectedIndex(PlotterFormat.labelSeparator() == '=' ? 1 : 0);
 
     try {
       int scale = PreferencesData.getInteger("gui.scale", -1);
