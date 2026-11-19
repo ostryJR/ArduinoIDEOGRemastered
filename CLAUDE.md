@@ -30,7 +30,8 @@ The feature list is in README.md.
 
 ## Decisions (don't redo)
 - **Version:** `VERSION_NAME`/`REVISION` stay `1.8.19`/`10819`, because cores and libraries depend on them. The remaster
-  release is `BaseNoGui.REMASTER_RELEASE`, and the build script reads it from there. Upstream master's unreleased 1.8.20 bump was
+  release is `BaseNoGui.REMASTER_RELEASE` (`R<n>[.<m>]`, currently `R1.1`; the user picks the bump at /ship), and the build
+  script reads it from there (only into the plist/display string; jpackage `--app-version` stays `1.8.19`). Upstream master's unreleased 1.8.20 bump was
   rejected when merging.
 - **App-menu name:** set with jpackage `--java-options '-Dapple.awt.application.name="Arduino Remastered"'`, quoted. Setting it in
   code is too late, because AWT is already up.
@@ -68,7 +69,8 @@ The feature list is in README.md.
   - uploading native-GCC firmware to the Feather M0 (OpenDrop)
   - the Serial Plotter with live data in the new separator modes
   - a visual check of the Preferences Remastered tab (now also has the autocomplete checkbox)
-  - autocomplete typed for real in the bundled app (verified only in the harness above)
+  - autocomplete typed for real in the bundled app (verified only in the harness above). In the harness's first run
+    Enter once inserted a newline instead of accepting; not reproducible in 4 later runs — watch for it.
   - opening an `.ino` from Finder
 - **Known limits:**
   - Autocomplete is text-based: no members after `.` beyond keywords.txt names, only the first name of `int a, b;`,
@@ -76,6 +78,7 @@ The feature list is in README.md.
   - Editor soft-wrap breaks mid-word inside comments (RSyntaxTextArea wraps by token).
   - GCC 12 prints a harmless newlib warning, "`_write is not implemented…`". Suppressing it was offered but not done.
 - **Housekeeping:**
-  - `origin/feat/remaster` is merged and could be deleted.
+  - `origin/feat/remaster` and local `docs/session-notes` are merged and could be deleted.
+  - `dist/` was last built before the R1.1 bump (shows R1): rebuild with `--compile`.
   - No release tag yet; run `/ship v1.8.19-R1.1` to tag the current release.
   - native-lib-loader has no license file in `lib/`.
