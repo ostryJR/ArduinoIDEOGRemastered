@@ -102,7 +102,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
 
   private final Editor editor;
 
-  private Image offscreen;
+  private boolean laidOut; // Remastered: painted directly, no 1x offscreen buffer
   private int width;
   private int height;
 
@@ -224,14 +224,15 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
 
     for (int i = 0; i < BUTTON_COUNT; i++) {
       for (int state = 0; state < 3; state++) {
-        Image image = createImage(BUTTON_WIDTH, BUTTON_HEIGHT);
-        Graphics g = image.getGraphics();
-        g.setColor(bgcolor);
-        g.fillRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT);
-        int offset = (BUTTON_IMAGE_SIZE - BUTTON_WIDTH) / 2;
-        g.drawImage(allButtons, -(i * BUTTON_IMAGE_SIZE) - offset,
-                    (-2 + state) * BUTTON_IMAGE_SIZE, null);
-        buttonImages[i][state] = image;
+        final int button = i, row = state;
+        // Remastered: Retina-sharp button images
+        buttonImages[i][state] = Theme.hiDpiImage(BUTTON_WIDTH, BUTTON_HEIGHT, g -> {
+          g.setColor(bgcolor);
+          g.fillRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT);
+          int offset = (BUTTON_IMAGE_SIZE - BUTTON_WIDTH) / 2;
+          g.drawImage(allButtons, -(button * BUTTON_IMAGE_SIZE) - offset,
+                      (-2 + row) * BUTTON_IMAGE_SIZE, null);
+        });
       }
     }
   }
@@ -287,9 +288,9 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     }
 
     Dimension size = getSize();
-    if ((offscreen == null) ||
+    if (!laidOut ||
       (size.width != width) || (size.height != height)) {
-      offscreen = createImage(size.width, size.height);
+      laidOut = true;
       width = size.width;
       height = size.height;
 
@@ -308,7 +309,8 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       x1[PLOTTER] = x1[SERIAL] - BUTTON_WIDTH;
       x2[PLOTTER] = x1[SERIAL];
     }
-    Graphics2D g = Theme.setupGraphics2D(offscreen.getGraphics());
+    // Remastered: Swing already double-buffers at full Retina resolution
+    Graphics2D g = Theme.setupGraphics2D(screen.create());
     g.setColor(bgcolor); //getBackground());
     g.fillRect(0, 0, width, height);
 
@@ -343,7 +345,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       }
     }
 
-    screen.drawImage(offscreen, 0, 0, null);
+    g.dispose();
 
     if (!isEnabled()) {
       screen.setColor(new Color(0, 0, 0, 100));
