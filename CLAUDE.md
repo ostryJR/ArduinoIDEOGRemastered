@@ -1,7 +1,7 @@
 # Arduino IDE 1.8 Remastered
 
 Remaster of Arduino IDE 1.8.19 (Java/Swing) for Apple Silicon by Mikolaj Ostrowski
-(github.com/ostryJR). The user-facing name is "Arduino 1.8 Remastered", version `1.8.19-R1`.
+(github.com/ostryJR). The user-facing name is "Arduino 1.8 Remastered", version `1.8.19-R1.1`.
 The feature list is in README.md.
 
 - Remotes: `origin` = github.com/ostryJR/ArduinoIDEOGRemastered (default branch `master`),
@@ -77,5 +77,5 @@ The feature list is in README.md.
   - GCC 12 prints a harmless newlib warning, "`_write is not implemented…`". Suppressing it was offered but not done.
 - **Housekeeping:**
   - `origin/feat/remaster` is merged and could be deleted.
-  - No release tag yet; run `/ship v1.8.19-R1` to create one.
+  - No release tag yet; run `/ship v1.8.19-R1.1` to tag the current release.
   - native-lib-loader has no license file in `lib/`.
