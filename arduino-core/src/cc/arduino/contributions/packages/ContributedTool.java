@@ -89,6 +89,11 @@ public class ContributedTool {
   }
 
   public DownloadableContribution getDownloadableContribution(Platform platform) {
+    // Remastered: on Apple Silicon prefer a native arm64 build when offered
+    for (HostDependentDownloadableContribution c : getSystems()) {
+      if (c.isNativeAppleSilicon(platform))
+        return c;
+    }
     for (HostDependentDownloadableContribution c : getSystems()) {
       if (c.isCompatible(platform))
         return c;

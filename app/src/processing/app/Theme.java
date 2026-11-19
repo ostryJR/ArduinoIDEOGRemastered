@@ -28,6 +28,11 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+import java.awt.image.BaseMultiResolutionImage;
+import java.awt.image.BufferedImage;
+import java.util.function.Consumer;
+import javax.imageio.ImageIO;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -551,13 +556,21 @@ public class Theme {
     Resource vectorFile = getThemeResource(filename + ".svg");
     if (vectorFile.exists()) {
       try {
-        image = imageFromSVG(vectorFile.getUrl(), width, height);
+        // Remastered: render at 1x and at the screen's scale (2x on Retina),
+        // instead of a single 1x bitmap that gets stretched and looks blurry
+        int s = deviceScale();
+        BufferedImage lo = imageFromSVG(vectorFile.getUrl(), width, height);
+        image = s == 1 ? lo
+          : new BaseMultiResolutionImage(lo, imageFromSVG(vectorFile.getUrl(), width * s, height * s));
       } catch (Exception e) {
         System.err.println("Failed to load " + vectorFile + ": " + e.getMessage());
       }
     }
 
     Resource bitmapFile = getThemeResource(filename + ".png");
+    if (image != null && bitmapFile.getPriority() <= vectorFile.getPriority()) {
+      return image;
+    }
     
     // Otherwise fall-back to PNG bitmaps, allowing user-defined bitmaps to
     // override built-in svgs
@@ -602,8 +615,46 @@ public class Theme {
     return getLibImage(THEME_DIR + name, who, width, height);
   }
 
-  private static Image imageFromSVG(URL url, int width, int height)
-      throws TranscoderException {
+  /**
+   * Remastered: device pixels per logical pixel of the main screen
+   * (2 on Retina displays, 1 otherwise).
+   */
+  public static int deviceScale() {
+    try {
+      if (GraphicsEnvironment.isHeadless()) {
+        return 1;
+      }
+      double s = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+        .getDefaultConfiguration().getDefaultTransform().getScaleX();
+      return Math.max(1, (int) Math.ceil(s));
+    } catch (Exception e) {
+      return 1;
+    }
+  }
+
+  /**
+   * Remastered: paints the same content at 1x and at device scale, so it
+   * stays sharp on Retina displays when drawn with drawImage(img, x, y, null).
+   */
+  public static Image hiDpiImage(int width, int height, Consumer<Graphics2D> painter) {
+    int s = deviceScale();
+    BufferedImage lo = paintAt(width, height, 1, painter);
+    return s == 1 ? lo : new BaseMultiResolutionImage(lo, paintAt(width, height, s, painter));
+  }
+
+  private static BufferedImage paintAt(int width, int height, int scale, Consumer<Graphics2D> painter) {
+    BufferedImage img = new BufferedImage(width * scale, height * scale, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g = img.createGraphics();
+    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+    g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+    g.scale(scale, scale);
+    painter.accept(g);
+    g.dispose();
+    return img;
+  }
+
+  private static BufferedImage imageFromSVG(URL url, int width, int height)
+      throws TranscoderException, IOException {
     Transcoder t = new PNGTranscoder();
     t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(width));
     t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(height));
@@ -613,8 +664,8 @@ public class Theme {
     TranscoderOutput output = new TranscoderOutput(ostream);
     t.transcode(input, output);
 
-    byte[] imgData = ostream.toByteArray();
-    return Toolkit.getDefaultToolkit().createImage(imgData);
+    // decoded synchronously, so it's ready for multi-resolution use
+    return ImageIO.read(new java.io.ByteArrayInputStream(ostream.toByteArray()));
   }
 
   static public Graphics2D setupGraphics2D(Graphics graphics) {

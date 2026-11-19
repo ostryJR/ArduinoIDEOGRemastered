@@ -23,7 +23,6 @@
 package processing.app.macosx;
 
 import cc.arduino.packages.BoardPort;
-import com.apple.eio.FileManager;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
@@ -153,12 +152,13 @@ public class Platform extends processing.app.Platform {
 
 
   private String getLibraryFolder() throws FileNotFoundException {
-    return FileManager.findFolder(kUserDomain, kDomainLibraryFolderType);
+    // Remastered: com.apple.eio.FileManager is not exported on JDK 9+
+    return new File(System.getProperty("user.home"), "Library").getAbsolutePath();
   }
 
 
   private String getDocumentsFolder() throws FileNotFoundException {
-    return FileManager.findFolder(kUserDomain, kDocumentsFolderType);
+    return new File(System.getProperty("user.home"), "Documents").getAbsolutePath();
   }
 
   @Override

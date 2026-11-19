@@ -154,9 +154,9 @@ public class Base {
     }
   }
 
-  @SuppressWarnings("deprecation")
   public static boolean isMacOsAboutMenuItemPresent() {
-    return com.apple.eawt.Application.getApplication().isAboutMenuItemPresent();
+    return java.awt.Desktop.isDesktopSupported()
+        && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.APP_ABOUT);
   }
 
   static public void initLogger() {
@@ -243,6 +243,8 @@ public class Base {
       // Setup the theme coloring fun
       Theme.init();
       System.setProperty("swing.aatext", PreferencesData.get("editor.antialias", "true"));
+      // Remastered: make JetBrains Mono / SF Mono resolvable by name
+      processing.app.helpers.EditorFonts.register();
 
       // Set the look and feel before opening the window
       try {

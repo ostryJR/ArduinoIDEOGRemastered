@@ -22,12 +22,10 @@
 
 package processing.app.macosx;
 
-import com.apple.eawt.*;
-import com.apple.eawt.AppEvent.AppReOpenedEvent;
-
 import processing.app.Base;
 import processing.app.Editor;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.util.List;
 
@@ -36,86 +34,73 @@ import java.util.List;
  * Deal with issues related to thinking different. This handles the basic
  * Mac OS X menu commands (and apple events) for open, about, prefs, etc.
  * <p>
- * Based on OSXAdapter.java from Apple DTS.
+ * Remastered: ported from the removed com.apple.eawt API to java.awt.Desktop
+ * (JDK 9+), so the IDE runs on a modern native arm64 JVM.
  * </p>
- * As of 0140, this code need not be built on platforms other than OS X,
- * because of the new platform structure which isolates through reflection.
  */
 public class ThinkDifferent {
 
   private static final int MAX_WAIT_FOR_BASE = 30000;
 
   static public void init() {
-    Application application = Application.getApplication();
+    Desktop desktop = Desktop.getDesktop();
 
-    application.addAppEventListener(new AppReOpenedListener() {
-      @Override
-        public void appReOpened(AppReOpenedEvent aroe) {
-          try {
-            if (Base.INSTANCE.getEditors().size() == 0) {
-              Base.INSTANCE.handleNew();
-            }
-          } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    if (desktop.isSupported(Desktop.Action.APP_EVENT_REOPENED)) {
+      desktop.addAppEventListener((java.awt.desktop.AppReopenedListener) e -> {
+        try {
+          if (Base.INSTANCE != null && Base.INSTANCE.getEditors().size() == 0) {
+            Base.INSTANCE.handleNew();
           }
-      }
-    });
-    application.setAboutHandler(new AboutHandler() {
-      @Override
-      public void handleAbout(AppEvent.AboutEvent aboutEvent) {
-        new Thread(() -> {
-          if (waitForBase()) {
-            Base.INSTANCE.handleAbout();
-          }
-        }).start();
-      }
-    });
-    application.setPreferencesHandler(new PreferencesHandler() {
-      @Override
-      public void handlePreferences(AppEvent.PreferencesEvent preferencesEvent) {
-        new Thread(() -> {
-          if (waitForBase()) {
-            Base.INSTANCE.handlePrefs();
-          }
-        }).start();
-      }
-    });
-    application.setOpenFileHandler(new OpenFilesHandler() {
-      @Override
-      public void openFiles(final AppEvent.OpenFilesEvent openFilesEvent) {
-        new Thread(() -> {
-          if (waitForBase()) {
-            for (File file : openFilesEvent.getFiles()) {
-              System.out.println(file);
-              try {
-                Base.INSTANCE.handleOpen(file);
-                List<Editor> editors = Base.INSTANCE.getEditors();
-                if (editors.size() == 2 && editors.get(0).getSketchController().isUntitled()) {
-                  Base.INSTANCE.handleClose(editors.get(0));
-                }
-              } catch (Exception e) {
-                throw new RuntimeException(e);
+        } catch (Exception ex) {
+          ex.printStackTrace();
+        }
+      });
+    }
+    if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
+      desktop.setAboutHandler(e -> new Thread(() -> {
+        if (waitForBase()) {
+          Base.INSTANCE.handleAbout();
+        }
+      }).start());
+    }
+    if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
+      desktop.setPreferencesHandler(e -> new Thread(() -> {
+        if (waitForBase()) {
+          Base.INSTANCE.handlePrefs();
+        }
+      }).start());
+    }
+    if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE)) {
+      desktop.setOpenFileHandler(openFilesEvent -> new Thread(() -> {
+        if (waitForBase()) {
+          for (File file : openFilesEvent.getFiles()) {
+            System.out.println(file);
+            try {
+              Base.INSTANCE.handleOpen(file);
+              List<Editor> editors = Base.INSTANCE.getEditors();
+              if (editors.size() == 2 && editors.get(0).getSketchController().isUntitled()) {
+                Base.INSTANCE.handleClose(editors.get(0));
               }
+            } catch (Exception e) {
+              throw new RuntimeException(e);
             }
           }
-        }).start();
-      }
-    });
-    application.setQuitHandler(new QuitHandler() {
-      @Override
-      public void handleQuitRequestWith(AppEvent.QuitEvent quitEvent, QuitResponse quitResponse) {
-        new Thread(() -> {
-          if (waitForBase()) {
-            if (Base.INSTANCE.handleQuit()) {
-              quitResponse.performQuit();
-            } else {
-              quitResponse.cancelQuit();
-            }
+        }
+      }).start());
+    }
+    if (desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+      desktop.setQuitHandler((quitEvent, quitResponse) -> new Thread(() -> {
+        if (waitForBase()) {
+          if (Base.INSTANCE.handleQuit()) {
+            quitResponse.performQuit();
+          } else {
+            quitResponse.cancelQuit();
           }
-        }).start();
-      }
-    });
+        } else {
+          quitResponse.performQuit();
+        }
+      }).start());
+    }
   }
 
   private static boolean waitForBase() {

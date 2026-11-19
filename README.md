@@ -1,3 +1,90 @@
+# Arduino IDE 1.8 Remastered
+
+> **This is a remaster of the classic Arduino IDE 1.8.19, not an official
+> Arduino release.** Remastered by **Mikolaj Ostrowski**
+> ([github.com/ostryJR](https://github.com/ostryJR)).
+> The original IDE is by Arduino and its community
+> (see [arduino.cc/credits](https://www.arduino.cc/credits)).
+
+**Current release: 1.8.19-R1.** That's upstream 1.8.19 plus remaster release R1.
+
+The remaster keeps everything you know from 1.8: the same look, menus,
+sketches, boards and libraries. It rebuilds the IDE to run natively on Apple
+Silicon Macs, with sharper text and a faster start. You can install it next to
+the original IDE; the remastered app's icon has an orange **R** tag in the
+style of the splash screen.
+
+## What the remaster changes
+
+Compared with upstream 1.8.19:
+
+- **Native arm64.** It runs on a bundled, trimmed JDK 22 runtime instead of the
+  x86_64 Java 8 runtime under Rosetta, so it starts faster and the editor is
+  more responsive.
+- **Better text.** It uses Retina-quality font rendering from the modern JDK,
+  with fractional glyph metrics.
+- **Edit → Editor Font** lets you choose JetBrains Mono (bundled, SIL OFL),
+  SF Mono (loaded from macOS) or Monaco. The change applies live to every
+  window.
+- **Toolbar.** A Serial Plotter button sits next to Serial Monitor. The New and
+  Open icons are clearer: a page with "+" and a folder (the old Open arrow looked
+  like Upload).
+- **Settings.** The Preferences window now has an **Editor font** choice and a
+  **Serial Plotter values** format: Auto (comma, space or tab, as in 1.8.19),
+  comma, semicolon, space, tab or a custom separator. Labels can be written as
+  `name:value` or `name=value`.
+- **arm64 native helpers.** Serial port discovery (libserialport), the Serial
+  Monitor (jSSC 2.9.6) and Auto Format (Artistic Style) are rebuilt for arm64
+  (`build/macosx/native-arm64/build.sh`).
+- **Native compiling.** `arduino-builder` 1.6.1 and `ctags` are rebuilt for arm64
+  at the same versions, so their output is byte-identical to the stock tools
+  (`build/macosx/native-arm64/build-builder.sh`).
+- **Native ARM compiler (on by default).** ARM boards (SAMD, e.g. Feather M0,
+  MKR, Zero) compile with Arm's official native Apple Silicon GCC 12.3 (Arm GNU
+  Toolchain 12.3.rel1) instead of the x86_64 GCC 7/9 that board packages ship.
+  Builds are about 1.8x faster. The toolchain (110 MB download, SHA-256
+  verified) is fetched from developer.arm.com on the first ARM compile and kept
+  in `~/Library/Arduino15/remastered/toolchains/`. Turn it off with
+  **Tools → Native ARM Compiler (Apple Silicon)** to use the board package's
+  own compiler again. Firmware can differ slightly in size, because it's a
+  newer GCC than the cores were validated with. AVR boards are unaffected.
+- **Board Manager on Apple Silicon.** Native `arm64-apple-darwin` tools are
+  preferred when a package offers them; otherwise x86_64 tools run through
+  Rosetta 2.
+- **Separate settings file.** Settings live in
+  `~/Library/Arduino15/preferences-remastered.txt`, copied from your stock
+  `preferences.txt` on first launch. Board packages, libraries and the
+  sketchbook are shared with the original IDE.
+- **Java 9+ port.** `com.apple.eawt` / `com.apple.eio` were replaced with
+  `java.awt.Desktop`, and the Touch Bar support (x86_64-only library) is skipped
+  on arm64.
+
+- **Remastered branding.** The app is named "Arduino Remastered" and the window
+  title reads "Arduino 1.8.19-R1 Remastered". The splash and About screens
+  credit the remaster, and the icon carries an orange R tag.
+
+## Build (macOS arm64)
+
+```sh
+build/macosx/build-remastered.sh --compile
+open "dist/Arduino 1.8 Remastered.app"
+```
+
+The build needs JDK 22 or newer and the Xcode command line tools. The board
+toolchains, examples and libraries are copied from an installed
+`/Applications/Arduino.app` (1.8.19), so nothing large is downloaded. Override
+that path with `ARDUINO_SOURCE_APP`.
+
+## Versioning
+
+Releases are named `<upstream version>-R<n>`, for example `1.8.19-R1`. The IDE
+still reports `1.8.19` (`runtime.ide.version=10819`) to board cores and
+libraries so that they keep working exactly as they do in upstream.
+
+---
+
+## Original Arduino README
+
 <p align="center">
     <img src="http://content.arduino.cc/brand/arduino-color.svg" width="50%" />
 </p>

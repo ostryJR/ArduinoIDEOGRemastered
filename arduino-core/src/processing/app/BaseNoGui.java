@@ -29,6 +29,7 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,9 +42,18 @@ import static processing.app.helpers.filefilters.OnlyDirs.ONLY_DIRS;
 public class BaseNoGui {
 
   /** Version string to be used for build */
-  public static final int REVISION = 10820;
+  public static final int REVISION = 10819;
   /** Extended version string displayed on GUI */
-  public static final String VERSION_NAME = "1.8.20";
+  public static final String VERSION_NAME = "1.8.19";
+  /**
+   * Remastered: release number of this remaster on top of upstream
+   * {@link #VERSION_NAME}. VERSION_NAME and REVISION stay at upstream's values
+   * because cores, libraries and 3rd party installers depend on them.
+   */
+  public static final String REMASTER_RELEASE = "R1";
+  public static final String EDITION_NAME = "Remastered";
+  /** e.g. "1.8.19-R1" */
+  public static final String REMASTER_VERSION = VERSION_NAME + "-" + REMASTER_RELEASE;
   public static final String VERSION_NAME_LONG;
 
   // Current directory to use for relative paths specified on the
@@ -51,7 +61,7 @@ public class BaseNoGui {
   static String currentDirectory = System.getProperty("user.dir");
 
   static {
-    String versionNameLong = VERSION_NAME;
+    String versionNameLong = REMASTER_VERSION + " " + EDITION_NAME;
     File hourlyBuildTxt = new File(getContentFile("lib"), "hourlyBuild.txt");
     if (hourlyBuildTxt.exists() && hourlyBuildTxt.canRead()) {
       versionNameLong += " Hourly Build";
@@ -828,6 +838,33 @@ public class BaseNoGui {
         preferencesFile = args[i];
         continue;
       }
+    }
+
+    // Remastered: keep our own preferences file next to the stock one, so
+    // settings like the new editor fonts never leak into the original IDE.
+    // On first launch it starts as a copy of the stock preferences.
+    String ownPrefs = System.getProperty("arduino.remastered.preferences");
+    if (preferencesFile == null && ownPrefs != null && getPlatform() != null) {
+      File own = new File(getPlatform().getSettingsFolder(), ownPrefs);
+      if (!own.exists()) {
+        File stock = new File(getPlatform().getSettingsFolder(), "preferences.txt");
+        if (stock.isFile()) {
+          try {
+            List<String> lines = new ArrayList<>();
+            for (String line : java.nio.file.Files.readAllLines(stock.toPath(), StandardCharsets.UTF_8)) {
+              // Upgrade the legacy default Monaco to the bundled JetBrains Mono
+              if (line.startsWith("editor.font=Monaco,") || line.startsWith("editor.font=Monospaced,")) {
+                line = "editor.font=JetBrains Mono," + line.substring(line.indexOf(',') + 1);
+              }
+              lines.add(line);
+            }
+            java.nio.file.Files.write(own.toPath(), lines, StandardCharsets.UTF_8);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+      preferencesFile = own.getAbsolutePath();
     }
 
     // run static initialization that grabs all the prefs

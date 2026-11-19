@@ -39,7 +39,9 @@ import processing.app.I18n;
 import processing.app.PreferencesData;
 import processing.app.Theme;
 import processing.app.Theme.ZippedTheme;
+import processing.app.helpers.EditorFonts;
 import processing.app.helpers.FileUtils;
+import processing.app.helpers.PlotterFormat;
 import processing.app.legacy.PApplet;
 
 import javax.swing.*;
@@ -121,6 +123,14 @@ public class Preferences extends javax.swing.JDialog {
     verboseUploadBox = new javax.swing.JCheckBox();
     comboWarningsLabel = new javax.swing.JLabel();
     comboWarnings = new JComboBox(warningItems);
+    // Remastered
+    editorFontLabel = new javax.swing.JLabel();
+    editorFontCombo = new JComboBox<>(EditorFonts.CHOICES.toArray(new String[0]));
+    plotterLabel = new javax.swing.JLabel();
+    plotterSeparatorCombo = new JComboBox<>(PlotterFormat.Separator.values());
+    plotterCustomField = new javax.swing.JTextField();
+    plotterLabelsLabel = new javax.swing.JLabel();
+    plotterLabelsCombo = new JComboBox<>(PlotterFormat.LABEL_STYLES);
     additionalBoardsManagerLabel = new javax.swing.JLabel();
     additionalBoardsManagerField = new javax.swing.JTextField();
     extendedAdditionalUrlFieldWindow = new javax.swing.JButton();
@@ -210,6 +220,19 @@ public class Preferences extends javax.swing.JDialog {
 
     comboWarningsLabel.setText(tr("Compiler warnings: "));
     comboWarningsLabel.setLabelFor(comboWarnings);
+
+    editorFontLabel.setText(tr("Editor font: "));
+    editorFontLabel.setLabelFor(editorFontCombo);
+
+    plotterLabel.setText(tr("Values separated by: "));
+    plotterLabel.setLabelFor(plotterSeparatorCombo);
+    plotterLabel.setToolTipText(tr("How the Serial Plotter splits each received line into values"));
+    plotterCustomField.setColumns(4);
+    plotterCustomField.setToolTipText(tr("Separator text, e.g. | or /"));
+    plotterSeparatorCombo.addItemListener(e -> plotterCustomField.setEnabled(
+      plotterSeparatorCombo.getSelectedItem() == PlotterFormat.Separator.CUSTOM));
+    plotterLabelsLabel.setText(tr("Labels written as: "));
+    plotterLabelsLabel.setLabelFor(plotterLabelsCombo);
 
     additionalBoardsManagerLabel.setText(tr("Additional Boards Manager URLs: "));
     additionalBoardsManagerLabel.setToolTipText(tr("Enter a comma separated list of urls"));
@@ -434,6 +457,7 @@ public class Preferences extends javax.swing.JDialog {
     );
 
     jTabbedPane1.addTab(tr("Settings"), jPanel1);
+    jTabbedPane1.addTab(tr("Remastered"), buildRemasteredPanel());
 
     proxyTypeButtonGroup.add(noProxy);
     noProxy.setText(tr("No proxy"));
@@ -728,6 +752,18 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JButton extendedAdditionalUrlFieldWindow;
   private javax.swing.JCheckBox externalEditorBox;
   private javax.swing.JTextField fontSizeField;
+  // Remastered
+  private javax.swing.JLabel editorFontLabel;
+  private javax.swing.JComboBox<String> editorFontCombo;
+  private javax.swing.JLabel plotterLabel;
+  private javax.swing.JComboBox<PlotterFormat.Separator> plotterSeparatorCombo;
+  private javax.swing.JTextField plotterCustomField;
+  private javax.swing.JLabel plotterLabelsLabel;
+  private javax.swing.JComboBox<String> plotterLabelsCombo;
+  private javax.swing.JLabel plotterHint;
+  private javax.swing.JCheckBox nativeArmBox;
+  private javax.swing.JCheckBox editorWrapBox;
+  private javax.swing.JCheckBox consoleWrapBox;
   private javax.swing.JLabel fontSizeLabel;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
@@ -771,6 +807,75 @@ public class Preferences extends javax.swing.JDialog {
     return errors;
   }
 
+  /**
+   * Remastered: settings that don't exist in stock 1.8.19 live in their own
+   * tab, so the Settings tab stays exactly as the original.
+   */
+  private JPanel buildRemasteredPanel() {
+    nativeArmBox = new JCheckBox(tr("Compile ARM boards with the native Apple Silicon compiler ("
+      + cc.arduino.remastered.NativeArmToolchain.DISPLAY_NAME + ")"));
+    plotterHint = new JLabel(tr("Example: \"temp:21.5, hum:40\" plots two lines named temp and hum."));
+    plotterHint.setEnabled(false);
+
+    JPanel panel = new JPanel(new GridBagLayout());
+    panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+    GridBagConstraints c = new GridBagConstraints();
+    c.anchor = GridBagConstraints.WEST;
+    c.insets = new Insets(4, 4, 4, 4);
+
+    int row = 0;
+    c.gridx = 0; c.gridy = row; panel.add(sectionLabel(tr("Editor")), withSpan(c, 4));
+    row++;
+    c.gridwidth = 1;
+    c.gridx = 0; c.gridy = row; panel.add(editorFontLabel, c);
+    c.gridx = 1; panel.add(editorFontCombo, c);
+    row++;
+    editorWrapBox = new JCheckBox(tr("Wrap long lines in the editor"));
+    c.gridx = 0; c.gridy = row; panel.add(editorWrapBox, withSpan(c, 4));
+    row++;
+    consoleWrapBox = new JCheckBox(tr("Wrap long lines in the console"));
+    c.gridx = 0; c.gridy = row; panel.add(consoleWrapBox, withSpan(c, 4));
+
+    row++;
+    c.gridx = 0; c.gridy = row; panel.add(sectionLabel(tr("Serial Plotter")), withSpan(c, 4));
+    row++;
+    c.gridwidth = 1;
+    c.gridx = 0; c.gridy = row; panel.add(plotterLabel, c);
+    c.gridx = 1; panel.add(plotterSeparatorCombo, c);
+    c.gridx = 2; panel.add(plotterCustomField, c);
+    row++;
+    c.gridx = 0; c.gridy = row; panel.add(plotterLabelsLabel, c);
+    c.gridx = 1; panel.add(plotterLabelsCombo, c);
+    row++;
+    c.gridx = 1; c.gridy = row; panel.add(plotterHint, withSpan(c, 3));
+
+    if (cc.arduino.remastered.NativeArmToolchain.isSupportedHost()) {
+      row++;
+      c.gridwidth = 1;
+      c.gridx = 0; c.gridy = row; panel.add(sectionLabel(tr("Compiler")), withSpan(c, 4));
+      row++;
+      c.gridx = 0; c.gridy = row; panel.add(nativeArmBox, withSpan(c, 4));
+    }
+
+    // push everything to the top-left
+    c.gridx = 3; c.gridy = row + 1; c.gridwidth = 1;
+    c.weightx = 1; c.weighty = 1;
+    panel.add(Box.createGlue(), c);
+    return panel;
+  }
+
+  private static GridBagConstraints withSpan(GridBagConstraints c, int span) {
+    GridBagConstraints copy = (GridBagConstraints) c.clone();
+    copy.gridwidth = span;
+    return copy;
+  }
+
+  private static JLabel sectionLabel(String text) {
+    JLabel label = new JLabel(text);
+    label.setFont(label.getFont().deriveFont(Font.BOLD));
+    return label;
+  }
+
   private void savePreferencesData() {
     String oldPath = PreferencesData.get("sketchbook.path");
     String newPath = sketchbookLocationField.getText();
@@ -799,6 +904,7 @@ public class Preferences extends javax.swing.JDialog {
     try {
       int newSize = Integer.parseInt(newSizeText.trim());
       String pieces[] = PApplet.split(PreferencesData.get("editor.font"), ',');
+      pieces[0] = (String) editorFontCombo.getSelectedItem(); // Remastered
       pieces[2] = String.valueOf(newSize);
       PreferencesData.set("editor.font", PApplet.join(pieces, ','));
 
@@ -818,6 +924,16 @@ public class Preferences extends javax.swing.JDialog {
 
     WarningItem warningItem = (WarningItem) comboWarnings.getSelectedItem();
     PreferencesData.set("compiler.warning_level", warningItem.getValue());
+
+    // Remastered: Serial Plotter format
+    PreferencesData.set(PlotterFormat.PREF_SEPARATOR, ((PlotterFormat.Separator) plotterSeparatorCombo.getSelectedItem()).key);
+    PreferencesData.set(PlotterFormat.PREF_CUSTOM, plotterCustomField.getText());
+    PreferencesData.set(PlotterFormat.PREF_LABEL, plotterLabelsCombo.getSelectedIndex() == 1 ? "=" : ":");
+    PreferencesData.setBoolean("editor.wrap", editorWrapBox.isSelected());
+    PreferencesData.setBoolean("console.wrap", consoleWrapBox.isSelected());
+    if (cc.arduino.remastered.NativeArmToolchain.isSupportedHost()) {
+      PreferencesData.setBoolean(cc.arduino.remastered.NativeArmToolchain.PREF, nativeArmBox.isSelected());
+    }
 
     PreferencesData.setBoolean("editor.linenumbers", displayLineNumbersBox.isSelected());
 
@@ -872,6 +988,21 @@ public class Preferences extends javax.swing.JDialog {
 
     Font editorFont = PreferencesData.getFont("editor.font");
     fontSizeField.setText(String.valueOf(editorFont.getSize()));
+    // Remastered: the family as written in the preference (not the resolved one)
+    String currentFamily = EditorFonts.current();
+    if (!EditorFonts.CHOICES.contains(currentFamily) && !currentFamily.isEmpty()) {
+      // keep a hand-edited font (e.g. Menlo) instead of silently replacing it
+      editorFontCombo.addItem(currentFamily);
+    }
+    editorFontCombo.setSelectedItem(currentFamily);
+
+    plotterSeparatorCombo.setSelectedItem(PlotterFormat.separator());
+    plotterCustomField.setText(PlotterFormat.customSeparator());
+    plotterCustomField.setEnabled(PlotterFormat.separator() == PlotterFormat.Separator.CUSTOM);
+    plotterLabelsCombo.setSelectedIndex(PlotterFormat.labelSeparator() == '=' ? 1 : 0);
+    nativeArmBox.setSelected(cc.arduino.remastered.NativeArmToolchain.isEnabled());
+    editorWrapBox.setSelected(PreferencesData.getBoolean("editor.wrap", false));
+    consoleWrapBox.setSelected(PreferencesData.getBoolean("console.wrap", false));
 
     try {
       int scale = PreferencesData.getInteger("gui.scale", -1);

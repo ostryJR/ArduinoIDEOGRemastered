@@ -65,6 +65,7 @@ import java.util.zip.ZipFile;
 
 import javax.swing.AbstractAction;
 import javax.swing.Box;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -74,6 +75,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
@@ -99,6 +101,8 @@ import jssc.SerialPortException;
 import processing.app.debug.RunnerException;
 import processing.app.forms.PasswordAuthorizationDialog;
 import processing.app.helpers.DocumentTextChangeListener;
+import processing.app.helpers.EditorFonts;
+import cc.arduino.remastered.NativeArmToolchain;
 import processing.app.helpers.Keys;
 import processing.app.helpers.OSUtils;
 import processing.app.helpers.PreferencesMapException;
@@ -499,6 +503,7 @@ public class Editor extends JFrame implements RunnerListener {
     if (serialMonitor != null) {
       serialMonitor.applyPreferences();
     }
+    refreshEditorFontMenu();
   }
 
 
@@ -729,6 +734,34 @@ public class Editor extends JFrame implements RunnerListener {
     addTools(toolsMenu, BaseNoGui.getToolsFolder());
     File sketchbookTools = new File(BaseNoGui.getSketchbookFolder(), "tools");
     addTools(toolsMenu, sketchbookTools);
+
+    // Remastered: native arm64 GCC for ARM boards (Apple Silicon only)
+    if (NativeArmToolchain.isSupportedHost()) {
+      JCheckBoxMenuItem nativeGcc = new JCheckBoxMenuItem(tr("Native ARM Compiler (Apple Silicon)"));
+      nativeGcc.setName("menuNativeArmCompiler");
+      nativeGcc.setSelected(NativeArmToolchain.isEnabled());
+      nativeGcc.addActionListener(e -> {
+        PreferencesData.setBoolean(NativeArmToolchain.PREF, nativeGcc.isSelected());
+        statusNotice(nativeGcc.isSelected()
+          ? "ARM boards now compile with the native " + NativeArmToolchain.DISPLAY_NAME + "."
+          : "ARM boards now compile with the board package's own compiler.");
+      });
+      toolsMenu.addMenuListener(new MenuListener() {
+        @Override
+        public void menuSelected(MenuEvent e) {
+          nativeGcc.setSelected(NativeArmToolchain.isEnabled());
+        }
+
+        @Override
+        public void menuDeselected(MenuEvent e) {
+        }
+
+        @Override
+        public void menuCanceled(MenuEvent e) {
+        }
+      });
+      toolsMenu.add(nativeGcc);
+    }
 
     toolsMenu.addSeparator();
 
@@ -1177,6 +1210,54 @@ public class Editor extends JFrame implements RunnerListener {
   }
 
 
+  private JMenu editorFontMenu;
+
+  private void refreshEditorFontMenu() {
+    if (editorFontMenu == null) {
+      return;
+    }
+    String current = EditorFonts.current();
+    for (Component c : editorFontMenu.getMenuComponents()) {
+      if (c instanceof JRadioButtonMenuItem) {
+        JRadioButtonMenuItem item = (JRadioButtonMenuItem) c;
+        String family = item.getActionCommand();
+        item.setEnabled(EditorFonts.isAvailable(family));
+        item.setSelected(family.equals(current));
+      }
+    }
+  }
+
+  private JMenu buildEditorFontMenu() {
+    JMenu fontMenu = new JMenu(tr("Editor Font"));
+    fontMenu.setName("menuEditorFont");
+    ButtonGroup group = new ButtonGroup();
+    for (String family : EditorFonts.CHOICES) {
+      JRadioButtonMenuItem item = new JRadioButtonMenuItem(family);
+      item.setActionCommand(family);
+      item.addActionListener(event -> EditorFonts.select(family));
+      group.add(item);
+      fontMenu.add(item);
+    }
+    editorFontMenu = fontMenu;
+    refreshEditorFontMenu();
+    // Also refresh when the menu opens, in case availability changed.
+    fontMenu.addMenuListener(new MenuListener() {
+      @Override
+      public void menuSelected(MenuEvent e) {
+        refreshEditorFontMenu();
+      }
+
+      @Override
+      public void menuDeselected(MenuEvent e) {
+      }
+
+      @Override
+      public void menuCanceled(MenuEvent e) {
+      }
+    });
+    return fontMenu;
+  }
+
   private JMenu buildEditMenu() {
     JMenu menu = new JMenu(tr("Edit"));
     menu.setName("menuEdit");
@@ -1268,6 +1349,9 @@ public class Editor extends JFrame implements RunnerListener {
     JMenuItem decreaseFontSizeItem = newJMenuItem(tr("Decrease Font Size"), KeyEvent.VK_MINUS);
     decreaseFontSizeItem.addActionListener(event -> base.handleFontSizeChange(-1));
     menu.add(decreaseFontSizeItem);
+
+    // Remastered: pick the editor typeface
+    menu.add(buildEditorFontMenu());
 
     menu.addSeparator();
 

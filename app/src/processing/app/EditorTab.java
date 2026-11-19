@@ -154,6 +154,8 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
     textArea.setAutoIndentEnabled(PreferencesData.getBoolean("editor.indent"));
     textArea.setCloseCurlyBraces(PreferencesData.getBoolean("editor.auto_close_braces", true));
     textArea.setAntiAliasingEnabled(PreferencesData.getBoolean("editor.antialias"));
+    // Remastered: sub-pixel glyph positioning for crisper, evenly spaced text
+    textArea.setFractionalFontMetricsEnabled(true);
     textArea.setTabsEmulated(PreferencesData.getBoolean("editor.tabs.expand"));
     textArea.setTabSize(PreferencesData.getInteger("editor.tabs.size"));
     textArea.addHyperlinkListener(evt -> {
@@ -287,6 +289,12 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
   }
   
   public void applyPreferences() {
+    // Remastered: optional soft wrapping of long lines (Preferences > Remastered)
+    boolean wrap = PreferencesData.getBoolean("editor.wrap", false);
+    if (textarea.getLineWrap() != wrap) {
+      textarea.setWrapStyleWord(true); // break at word boundaries (set first)
+      textarea.setLineWrap(wrap);
+    }
     textarea.setCodeFoldingEnabled(PreferencesData.getBoolean("editor.code_folding"));
     scrollPane.setFoldIndicatorEnabled(PreferencesData.getBoolean("editor.code_folding"));
     scrollPane.setLineNumbersEnabled(PreferencesData.getBoolean("editor.linenumbers"));

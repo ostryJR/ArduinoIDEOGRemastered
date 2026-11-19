@@ -82,7 +82,6 @@ public class EditorHeader extends JComponent {
   static Image[][] pieces;
   static Image menuButtons[];
 
-  Image offscreen;
   int sizeW, sizeH;
   int imageW, imageH;
 
@@ -199,30 +198,16 @@ public class EditorHeader extends JComponent {
     SketchController sketch = editor.getSketchController();
     if (sketch == null) return;  // ??
 
+    // Remastered: paint directly (Swing double-buffers at full Retina
+    // resolution) instead of through a 1x offscreen image, so the file name
+    // and tab graphics are sharp
     Dimension size = getSize();
-    if ((size.width != sizeW) || (size.height != sizeH)) {
-      // component has been resized
+    sizeW = size.width;
+    sizeH = size.height;
+    imageW = sizeW;
+    imageH = sizeH;
 
-      if ((size.width > imageW) || (size.height > imageH)) {
-        // nix the image and recreate, it's too small
-        offscreen = null;
-
-      } else {
-        // who cares, just resize
-        sizeW = size.width;
-        sizeH = size.height;
-      }
-    }
-
-    if (offscreen == null) {
-      sizeW = size.width;
-      sizeH = size.height;
-      imageW = sizeW;
-      imageH = sizeH;
-      offscreen = createImage(imageW, imageH);
-    }
-
-    Graphics2D g = Theme.setupGraphics2D(offscreen.getGraphics());
+    Graphics2D g = Theme.setupGraphics2D(screen.create());
     if (font == null) {
       font = Theme.getFont("header.text.font");
     }
@@ -286,7 +271,7 @@ public class EditorHeader extends JComponent {
     g.drawImage(menuButtons[popup.isVisible() ? SELECTED : UNSELECTED],
                 menuLeft, 0, null);
 
-    screen.drawImage(offscreen, 0, 0, null);
+    g.dispose();
   }
 
 

@@ -31,6 +31,7 @@ package cc.arduino;
 
 import cc.arduino.i18n.I18NAwareMessageConsumer;
 import cc.arduino.packages.BoardPort;
+import cc.arduino.remastered.NativeArmToolchain;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
@@ -231,6 +232,14 @@ public class Compiler implements MessageConsumer {
   }
 
   private void callArduinoBuilder(TargetBoard board, TargetPlatform platform, TargetPackage aPackage, String vidpid, BuilderAction action, OutputStream outStream, OutputStream errStream) throws RunnerException {
+    // Remastered: use the native arm64 GCC for ARM boards when enabled
+    File nativeArmGcc = null;
+    if (NativeArmToolchain.isEnabled() && NativeArmToolchain.appliesTo(BaseNoGui.getBoardPreferences())) {
+      nativeArmGcc = NativeArmToolchain.ensureInstalled(System.out::print);
+    }
+    // (switching compilers changes the -prefs below, which makes arduino-builder
+    // wipe the build folder by itself via build.options.json)
+
     List<String> cmd = new ArrayList<>();
     cmd.add(BaseNoGui.getContentFile("arduino-builder").getAbsolutePath());
     cmd.add(action.value);
@@ -263,7 +272,13 @@ public class Compiler implements MessageConsumer {
 
     if (PreferencesData.getBoolean("compiler.cache_core") == true && buildCache != null) {
       cmd.add("-build-cache");
-      cmd.add(buildCache.getAbsolutePath());
+      File cache = buildCache;
+      if (nativeArmGcc != null) {
+        // cores compiled by different compilers must never be mixed
+        cache = new File(buildCache, "native-arm-gcc-" + NativeArmToolchain.VERSION);
+        cache.mkdirs();
+      }
+      cmd.add(cache.getAbsolutePath());
     }
 
     PreferencesData.getMap()
@@ -278,6 +293,17 @@ public class Compiler implements MessageConsumer {
         if (entry.getKey().startsWith("runtime.tools")) {
           cmd.add("-prefs=" + entry.getKey() + "=" + entry.getValue());
         }
+    }
+
+    if (nativeArmGcc != null) {
+      for (String key : BaseNoGui.getBoardPreferences().keySet()) {
+        if (NativeArmToolchain.isToolKey(key)) {
+          cmd.add("-prefs=" + key + "=" + nativeArmGcc.getAbsolutePath());
+        }
+      }
+      if (verbose && action == BuilderAction.COMPILE) {
+        System.out.println("Using native Apple Silicon compiler: " + NativeArmToolchain.DISPLAY_NAME);
+      }
     }
 
     //commandLine.addArgument("-debug-level=10", false);

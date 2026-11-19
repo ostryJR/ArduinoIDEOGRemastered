@@ -55,14 +55,14 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
    * Rollover titles for each button.
    */
   private static final String[] title = {
-    tr("Verify"), tr("Upload"), tr("New"), tr("Open"), tr("Save"), tr("Serial Monitor")
+    tr("Verify"), tr("Upload"), tr("New"), tr("Open"), tr("Save"), tr("Serial Monitor"), tr("Serial Plotter")
   };
 
   /**
    * Titles for each button when the shift key is pressed.
    */
   private static final String[] titleShift = {
-    tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Plotter")
+    tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Plotter"), tr("Serial Plotter")
   };
 
   private static final int BUTTON_COUNT = title.length;
@@ -93,13 +93,16 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
 
   private static final int SERIAL = 5;
 
+  // Remastered: dedicated Serial Plotter button, left of Serial Monitor
+  private static final int PLOTTER = 6;
+
   private static final int INACTIVE = 0;
   private static final int ROLLOVER = 1;
   private static final int ACTIVE = 2;
 
   private final Editor editor;
 
-  private Image offscreen;
+  private boolean laidOut; // Remastered: painted directly, no 1x offscreen buffer
   private int width;
   private int height;
 
@@ -112,6 +115,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   private JPopupMenu popup;
   private final JMenu menu;
   private JTouchBar touchBar;
+  private static boolean touchBarSupported = !"aarch64".equals(System.getProperty("os.arch"));
   private TouchBarButton[] touchBarButtons;
 
   private int buttonCount;
@@ -143,6 +147,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     which[buttonCount++] = OPEN;
     which[buttonCount++] = SAVE;
     which[buttonCount++] = SERIAL;
+    which[buttonCount++] = PLOTTER;
 
     currentRollover = -1;
 
@@ -153,11 +158,17 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     if (OSUtils.isMacOS() && VersionComparator.greaterThanOrEqual(OSUtils.version(), "10.12")) {
       editor.addWindowListener(new WindowAdapter() {
         public void windowActivated(WindowEvent e) {
-          if (touchBar == null) {
-            buildTouchBar();
-            
-            touchBar.show(editor); 
-          }               
+          if (touchBar == null && touchBarSupported) {
+            try {
+              buildTouchBar();
+              touchBar.show(editor);
+            } catch (Throwable t) {
+              // Remastered: libJTouchBar is x86_64-only; skip it on arm64
+              touchBarSupported = false;
+              touchBar = null;
+              touchBarButtons = null;
+            }
+          }
         }
       });
     }
@@ -213,14 +224,15 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
 
     for (int i = 0; i < BUTTON_COUNT; i++) {
       for (int state = 0; state < 3; state++) {
-        Image image = createImage(BUTTON_WIDTH, BUTTON_HEIGHT);
-        Graphics g = image.getGraphics();
-        g.setColor(bgcolor);
-        g.fillRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT);
-        int offset = (BUTTON_IMAGE_SIZE - BUTTON_WIDTH) / 2;
-        g.drawImage(allButtons, -(i * BUTTON_IMAGE_SIZE) - offset,
-                    (-2 + state) * BUTTON_IMAGE_SIZE, null);
-        buttonImages[i][state] = image;
+        final int button = i, row = state;
+        // Remastered: Retina-sharp button images
+        buttonImages[i][state] = Theme.hiDpiImage(BUTTON_WIDTH, BUTTON_HEIGHT, g -> {
+          g.setColor(bgcolor);
+          g.fillRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT);
+          int offset = (BUTTON_IMAGE_SIZE - BUTTON_WIDTH) / 2;
+          g.drawImage(allButtons, -(button * BUTTON_IMAGE_SIZE) - offset,
+                      (-2 + row) * BUTTON_IMAGE_SIZE, null);
+        });
       }
     }
   }
@@ -276,9 +288,9 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     }
 
     Dimension size = getSize();
-    if ((offscreen == null) ||
+    if (!laidOut ||
       (size.width != width) || (size.height != height)) {
-      offscreen = createImage(size.width, size.height);
+      laidOut = true;
       width = size.width;
       height = size.height;
 
@@ -293,8 +305,12 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       // Serial button must be on the right
       x1[SERIAL] = width - BUTTON_WIDTH - 14;
       x2[SERIAL] = width - 14;
+      // ... with the Serial Plotter right next to it
+      x1[PLOTTER] = x1[SERIAL] - BUTTON_WIDTH;
+      x2[PLOTTER] = x1[SERIAL];
     }
-    Graphics2D g = Theme.setupGraphics2D(offscreen.getGraphics());
+    // Remastered: Swing already double-buffers at full Retina resolution
+    Graphics2D g = Theme.setupGraphics2D(screen.create());
     g.setColor(bgcolor); //getBackground());
     g.fillRect(0, 0, width, height);
 
@@ -319,16 +335,17 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     if (currentRollover != -1) {
       int statusY = (BUTTON_HEIGHT + g.getFontMetrics().getAscent()) / 2;
       String status = shiftPressed ? titleShift[currentRollover] : title[currentRollover];
-      if (currentRollover != SERIAL)
-        g.drawString(status, (buttonCount - 1) * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY);
+      if (currentRollover != SERIAL && currentRollover != PLOTTER)
+        g.drawString(status, (buttonCount - 2) * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY);
       else {
-        int statusX = x1[SERIAL] - BUTTON_GAP;
+        // right-aligned, left of the serial buttons
+        int statusX = x1[PLOTTER] - BUTTON_GAP;
         statusX -= g.getFontMetrics().stringWidth(status);
         g.drawString(status, statusX, statusY);
       }
     }
 
-    screen.drawImage(offscreen, 0, 0, null);
+    g.dispose();
 
     if (!isEnabled()) {
       screen.setColor(new Color(0, 0, 0, 100));
@@ -505,6 +522,10 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
         } else {
           editor.handleSerial();
         }
+        break;
+
+      case PLOTTER:
+        editor.handlePlotter();
         break;
 
       default:
