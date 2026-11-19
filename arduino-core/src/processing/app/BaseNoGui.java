@@ -45,6 +45,15 @@ public class BaseNoGui {
   public static final int REVISION = 10819;
   /** Extended version string displayed on GUI */
   public static final String VERSION_NAME = "1.8.19";
+  /**
+   * Remastered: release number of this remaster on top of upstream
+   * {@link #VERSION_NAME}. VERSION_NAME and REVISION stay at upstream's values
+   * because cores, libraries and 3rd party installers depend on them.
+   */
+  public static final String REMASTER_RELEASE = "R1";
+  public static final String EDITION_NAME = "Remastered";
+  /** e.g. "1.8.19-R1" */
+  public static final String REMASTER_VERSION = VERSION_NAME + "-" + REMASTER_RELEASE;
   public static final String VERSION_NAME_LONG;
 
   // Current directory to use for relative paths specified on the
@@ -52,7 +61,7 @@ public class BaseNoGui {
   static String currentDirectory = System.getProperty("user.dir");
 
   static {
-    String versionNameLong = VERSION_NAME;
+    String versionNameLong = REMASTER_VERSION + " " + EDITION_NAME;
     File hourlyBuildTxt = new File(getContentFile("lib"), "hourlyBuild.txt");
     if (hourlyBuildTxt.exists() && hourlyBuildTxt.canRead()) {
       versionNameLong += " Hourly Build";

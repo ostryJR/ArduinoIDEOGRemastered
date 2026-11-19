@@ -24,7 +24,10 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 SOURCE_APP="${ARDUINO_SOURCE_APP:-/Applications/Arduino.app}"
 APP_NAME="Arduino 1.8 Remastered"
-VERSION="1.8.19"
+# Upstream version + remaster release, read from BaseNoGui.java (single source of truth)
+VERSION="$(sed -n 's/.*String VERSION_NAME = "\(.*\)";/\1/p' arduino-core/src/processing/app/BaseNoGui.java)"
+REMASTER_RELEASE="$(sed -n 's/.*String REMASTER_RELEASE = "\(.*\)";/\1/p' arduino-core/src/processing/app/BaseNoGui.java)"
+DISPLAY_VERSION="$VERSION-$REMASTER_RELEASE"
 WORK="$ROOT/build/macosx/remastered-work"
 INPUT="$WORK/input"
 RUNTIME="$WORK/runtime"
@@ -129,7 +132,8 @@ sed -i '' 's/mac.LSHandlerRank=Alternate/mac.LSHandlerRank=Owner/' "$ASSOC/ino.p
 JAVA_OPTS=(
   '-DAPP_DIR=$APPDIR'
   '-Darduino.remastered.preferences=preferences-remastered.txt'
-  '-Dapple.awt.application.name=Arduino'
+  # quoted so jpackage keeps the space; names the macOS app menu items
+  '-Dapple.awt.application.name="Arduino Remastered"'
   '-Dcom.apple.macos.use-file-dialog-packages=true'
   '-Dcom.apple.smallTabs=true'
   '-Djava.net.preferIPv4Stack=true'
@@ -169,7 +173,7 @@ jpackage --type app-image \
   --runtime-image "$RUNTIME" \
   --icon build/macosx/remastered.icns \
   --mac-package-identifier cc.arduino.Arduino.remastered \
-  --mac-package-name "Arduino" \
+  --mac-package-name "Arduino Remastered" \
   --app-version "$VERSION" \
   --copyright "© Arduino LLC. Remastered for Apple Silicon by Mikolaj Ostrowski." \
   "${ASSOC_OPTS[@]}" \
@@ -207,6 +211,10 @@ PLIST="$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :NSHighResolutionCapable bool true" "$PLIST"
 /usr/libexec/PlistBuddy -c "Delete :LSApplicationCategoryType" "$PLIST" >/dev/null 2>&1 || true
 /usr/libexec/PlistBuddy -c "Add :LSApplicationCategoryType string public.app-category.education" "$PLIST"
+# jpackage only accepts numeric versions; show the remaster version in Finder
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $DISPLAY_VERSION" "$PLIST"
+/usr/libexec/PlistBuddy -c "Delete :CFBundleGetInfoString" "$PLIST" >/dev/null 2>&1 || true
+/usr/libexec/PlistBuddy -c "Add :CFBundleGetInfoString string Arduino IDE $DISPLAY_VERSION Remastered by Mikolaj Ostrowski" "$PLIST"
 /usr/libexec/PlistBuddy -c "Delete :LSMinimumSystemVersion" "$PLIST" >/dev/null 2>&1 || true
 /usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 11.0" "$PLIST"
 
@@ -215,5 +223,6 @@ codesign --force --deep -s - "$APP"
 
 log "Done"
 echo "App:     $APP"
+echo "Version: $DISPLAY_VERSION"
 echo "Arch:    $(lipo -archs "$APP/Contents/MacOS/$APP_NAME")"
 echo "Size:    $(du -sh "$APP" | cut -f1)"

@@ -1,11 +1,21 @@
 # Arduino IDE 1.8 Remastered
 
-An unofficial fork of the classic **Arduino IDE 1.8.19** for Apple Silicon Macs,
-remastered by **Mikolaj Ostrowski**. The original IDE is by Arduino and its
-community (see [arduino.cc/credits](https://www.arduino.cc/credits)).
-It's the same IDE with the same look, running natively on arm64 with sharper text.
+> **This is a remaster of the classic Arduino IDE 1.8.19, not an official
+> Arduino release.** Remastered by **Mikolaj Ostrowski**
+> ([github.com/ostryJR](https://github.com/ostryJR)).
+> The original IDE is by Arduino and its community
+> (see [arduino.cc/credits](https://www.arduino.cc/credits)).
 
-**What changed vs. upstream 1.8.19**
+**Current release: 1.8.19-R1.** That's upstream 1.8.19 plus remaster release R1.
+
+The remaster keeps everything you know from 1.8: the same look, menus,
+sketches, boards and libraries. It rebuilds the IDE to run natively on Apple
+Silicon Macs, with sharper text and a faster start. You can install it next to
+the original IDE; the remastered app has a small orange **R** badge on its icon.
+
+## What the remaster changes
+
+Compared with upstream 1.8.19:
 
 - **Native arm64.** It runs on a bundled, trimmed JDK 22 runtime instead of the
   x86_64 Java 8 runtime under Rosetta, so it starts faster and the editor is
@@ -29,7 +39,11 @@ It's the same IDE with the same look, running natively on arm64 with sharper tex
   `java.awt.Desktop`, and the Touch Bar support (x86_64-only library) is skipped
   on arm64.
 
-**Build (macOS arm64):**
+- **Remastered branding.** The app is named "Arduino Remastered" and the window
+  title reads "Arduino 1.8.19-R1 Remastered". The splash and About screens
+  credit the remaster, and the icon has an orange R badge.
+
+## Build (macOS arm64)
 
 ```sh
 build/macosx/build-remastered.sh --compile
@@ -41,7 +55,15 @@ toolchains, examples and libraries are copied from an installed
 `/Applications/Arduino.app` (1.8.19), so nothing large is downloaded. Override
 that path with `ARDUINO_SOURCE_APP`.
 
+## Versioning
+
+Releases are named `<upstream version>-R<n>`, for example `1.8.19-R1`. The IDE
+still reports `1.8.19` (`runtime.ide.version=10819`) to board cores and
+libraries so that they keep working exactly as they do in upstream.
+
 ---
+
+## Original Arduino README
 
 <p align="center">
 	<img src="http://content.arduino.cc/brand/arduino-color.svg" width="50%" />
