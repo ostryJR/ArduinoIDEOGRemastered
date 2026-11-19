@@ -109,4 +109,49 @@ public class HostDependentDownloadableContributionTest {
     assertFalse(contribution.isCompatible(platform));
   }
 
+  // Remastered: Apple Silicon
+
+  private static Platform appleSilicon() {
+    return new Platform() {
+      @Override
+      public String getOsName() {
+        return "Mac OS X";
+      }
+
+      @Override
+      public String getOsArch() {
+        return "arm64";
+      }
+    };
+  }
+
+  private static HostDependentDownloadableContributionStub forHost(String host) {
+    return new HostDependentDownloadableContributionStub() {
+      @Override
+      public String getHost() {
+        return host;
+      }
+    };
+  }
+
+  @Test
+  public void appleSiliconRunsX86ToolsThroughRosetta() {
+    assertTrue(forHost("x86_64-apple-darwin").isCompatible(appleSilicon()));
+    assertFalse(forHost("x86_64-apple-darwin").isNativeAppleSilicon(appleSilicon()));
+  }
+
+  @Test
+  public void appleSiliconPrefersNativeTools() {
+    assertTrue(forHost("arm64-apple-darwin").isCompatible(appleSilicon()));
+    assertTrue(forHost("arm64-apple-darwin").isNativeAppleSilicon(appleSilicon()));
+    assertTrue(forHost("aarch64-apple-darwin20").isNativeAppleSilicon(appleSilicon()));
+  }
+
+  @Test
+  public void appleSiliconRejectsOtherOses() {
+    assertFalse(forHost("x86_64-pc-linux-gnu").isCompatible(appleSilicon()));
+    assertFalse(forHost("aarch64-linux-gnu").isCompatible(appleSilicon()));
+    assertFalse(forHost("i686-mingw32").isCompatible(appleSilicon()));
+  }
+
 }

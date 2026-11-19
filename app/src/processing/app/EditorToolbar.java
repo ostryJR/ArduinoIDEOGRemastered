@@ -112,6 +112,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   private JPopupMenu popup;
   private final JMenu menu;
   private JTouchBar touchBar;
+  private static boolean touchBarSupported = !"aarch64".equals(System.getProperty("os.arch"));
   private TouchBarButton[] touchBarButtons;
 
   private int buttonCount;
@@ -153,11 +154,17 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     if (OSUtils.isMacOS() && VersionComparator.greaterThanOrEqual(OSUtils.version(), "10.12")) {
       editor.addWindowListener(new WindowAdapter() {
         public void windowActivated(WindowEvent e) {
-          if (touchBar == null) {
-            buildTouchBar();
-            
-            touchBar.show(editor); 
-          }               
+          if (touchBar == null && touchBarSupported) {
+            try {
+              buildTouchBar();
+              touchBar.show(editor);
+            } catch (Throwable t) {
+              // Remastered: libJTouchBar is x86_64-only; skip it on arm64
+              touchBarSupported = false;
+              touchBar = null;
+              touchBarButtons = null;
+            }
+          }
         }
       });
     }

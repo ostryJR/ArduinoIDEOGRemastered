@@ -58,6 +58,21 @@ public class HostDependentDownloadableContribution extends DownloadableContribut
     return getHost() + " " + super.toString();
   }
 
+  private static boolean isAppleSilicon(String osArch) {
+    return osArch.equals("arm64") || osArch.contains("aarch64");
+  }
+
+  /**
+   * @return true if this is a native arm64 macOS build and we're running on
+   * Apple Silicon.
+   */
+  public boolean isNativeAppleSilicon(Platform platform) {
+    String osName = platform.getOsName();
+    String osArch = platform.getOsArch();
+    return osName != null && osName.contains("Mac") && osArch != null && isAppleSilicon(osArch)
+      && getHost().matches("(arm64|aarch64)-apple-darwin.*");
+  }
+
   public boolean isCompatible(Platform platform) {
     String osName = platform.getOsName();
     assert osName != null;
@@ -91,7 +106,12 @@ public class HostDependentDownloadableContribution extends DownloadableContribut
     }
 
     if (osName.contains("Mac")) {
-      if (osArch.contains("x86_64")) {
+      if (isAppleSilicon(osArch)) {
+        // Remastered: Apple Silicon runs native arm64 tools, or x86_64 ones
+        // through Rosetta 2 (native builds are preferred, see ContributedTool)
+        return isNativeAppleSilicon(platform)
+          || host.matches("x86_64-apple-darwin.*") || host.matches("i[3456]86-apple-darwin.*");
+      } else if (osArch.contains("x86_64")) {
         return host.matches("x86_64-apple-darwin.*") || host.matches("i[3456]86-apple-darwin.*");
       } else {
         return host.matches("i[3456]86-apple-darwin.*");

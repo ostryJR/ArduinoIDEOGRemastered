@@ -1,3 +1,48 @@
+# Arduino IDE 1.8 Remastered
+
+An unofficial fork of the classic **Arduino IDE 1.8.19** for Apple Silicon Macs,
+remastered by **Mikolaj Ostrowski**. The original IDE is by Arduino and its
+community (see [arduino.cc/credits](https://www.arduino.cc/credits)).
+It's the same IDE with the same look, running natively on arm64 with sharper text.
+
+**What changed vs. upstream 1.8.19**
+
+- **Native arm64.** It runs on a bundled, trimmed JDK 22 runtime instead of the
+  x86_64 Java 8 runtime under Rosetta, so it starts faster and the editor is
+  more responsive.
+- **Better text.** It uses Retina-quality font rendering from the modern JDK,
+  with fractional glyph metrics.
+- **Edit → Editor Font** lets you choose JetBrains Mono (bundled, SIL OFL),
+  SF Mono (loaded from macOS) or Monaco. The change applies live to every
+  window.
+- **arm64 native helpers.** Serial port discovery (libserialport), the Serial
+  Monitor (jSSC 2.9.6) and Auto Format (Artistic Style) are rebuilt for arm64
+  (`build/macosx/native-arm64/build.sh`).
+- **Board Manager on Apple Silicon.** Native `arm64-apple-darwin` tools are
+  preferred when a package offers them; otherwise x86_64 tools run through
+  Rosetta 2.
+- **Separate settings file.** Settings live in
+  `~/Library/Arduino15/preferences-remastered.txt`, copied from your stock
+  `preferences.txt` on first launch. Board packages, libraries and the
+  sketchbook are shared with the original IDE.
+- **Java 9+ port.** `com.apple.eawt` / `com.apple.eio` were replaced with
+  `java.awt.Desktop`, and the Touch Bar support (x86_64-only library) is skipped
+  on arm64.
+
+**Build (macOS arm64):**
+
+```sh
+build/macosx/build-remastered.sh --compile
+open "dist/Arduino 1.8 Remastered.app"
+```
+
+The build needs JDK 22 or newer and the Xcode command line tools. The board
+toolchains, examples and libraries are copied from an installed
+`/Applications/Arduino.app` (1.8.19), so nothing large is downloaded. Override
+that path with `ARDUINO_SOURCE_APP`.
+
+---
+
 <p align="center">
 	<img src="http://content.arduino.cc/brand/arduino-color.svg" width="50%" />
 </p>

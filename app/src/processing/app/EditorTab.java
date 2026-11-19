@@ -154,6 +154,8 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
     textArea.setAutoIndentEnabled(PreferencesData.getBoolean("editor.indent"));
     textArea.setCloseCurlyBraces(PreferencesData.getBoolean("editor.auto_close_braces", true));
     textArea.setAntiAliasingEnabled(PreferencesData.getBoolean("editor.antialias"));
+    // Remastered: sub-pixel glyph positioning for crisper, evenly spaced text
+    textArea.setFractionalFontMetricsEnabled(true);
     textArea.setTabsEmulated(PreferencesData.getBoolean("editor.tabs.expand"));
     textArea.setTabSize(PreferencesData.getInteger("editor.tabs.size"));
     textArea.addHyperlinkListener(evt -> {

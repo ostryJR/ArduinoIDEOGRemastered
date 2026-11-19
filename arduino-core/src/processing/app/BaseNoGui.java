@@ -29,6 +29,7 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -828,6 +829,33 @@ public class BaseNoGui {
         preferencesFile = args[i];
         continue;
       }
+    }
+
+    // Remastered: keep our own preferences file next to the stock one, so
+    // settings like the new editor fonts never leak into the original IDE.
+    // On first launch it starts as a copy of the stock preferences.
+    String ownPrefs = System.getProperty("arduino.remastered.preferences");
+    if (preferencesFile == null && ownPrefs != null && getPlatform() != null) {
+      File own = new File(getPlatform().getSettingsFolder(), ownPrefs);
+      if (!own.exists()) {
+        File stock = new File(getPlatform().getSettingsFolder(), "preferences.txt");
+        if (stock.isFile()) {
+          try {
+            List<String> lines = new ArrayList<>();
+            for (String line : java.nio.file.Files.readAllLines(stock.toPath(), StandardCharsets.UTF_8)) {
+              // Upgrade the legacy default Monaco to the bundled JetBrains Mono
+              if (line.startsWith("editor.font=Monaco,") || line.startsWith("editor.font=Monospaced,")) {
+                line = "editor.font=JetBrains Mono," + line.substring(line.indexOf(',') + 1);
+              }
+              lines.add(line);
+            }
+            java.nio.file.Files.write(own.toPath(), lines, StandardCharsets.UTF_8);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+      preferencesFile = own.getAbsolutePath();
     }
 
     // run static initialization that grabs all the prefs

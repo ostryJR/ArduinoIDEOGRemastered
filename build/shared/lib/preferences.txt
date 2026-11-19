@@ -99,7 +99,7 @@ editor.code_folding=false
 # font size for editor
 editor.font=Monospaced,plain,12
 # Monaco is nicer on Mac OS X, so use that explicitly
-editor.font.macosx = Monaco,plain,12
+editor.font.macosx = JetBrains Mono,plain,13
 
 # anti-aliased text, turned on by default
 editor.antialias=true
