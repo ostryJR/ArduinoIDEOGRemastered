@@ -88,6 +88,13 @@ for lib in libastylej.dylib libastylej.jnilib liblistSerialsj.dylib; do
   chmod 755 "$INPUT/lib/$lib"
 done
 
+log "Building arm64 arduino-builder and ctags"
+build/macosx/native-arm64/build-builder.sh build/macosx/native-arm64/out
+# Same versions as stock (1.6.1 / 5.8-arduino11), byte-identical output
+cp build/macosx/native-arm64/out/arduino-builder "$INPUT/arduino-builder"
+cp build/macosx/native-arm64/out/ctags "$INPUT/tools-builder/ctags/5.8-arduino11/ctags"
+chmod 755 "$INPUT/arduino-builder" "$INPUT/tools-builder/ctags/5.8-arduino11/ctags"
+
 # ------------------------------------------------------------------ runtime
 log "Creating trimmed Java runtime"
 DETECTED="$(jdeps --print-module-deps --ignore-missing-deps --multi-release 22 \
