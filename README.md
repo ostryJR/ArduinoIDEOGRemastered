@@ -26,6 +26,13 @@ Compared with upstream 1.8.19:
 - **Edit → Editor Font** lets you choose JetBrains Mono (bundled, SIL OFL),
   SF Mono (loaded from macOS) or Monaco. The change applies live to every
   window.
+- **Toolbar.** A Serial Plotter button sits next to Serial Monitor. The New and
+  Open icons are clearer: a page with "+" and a folder (the old Open arrow looked
+  like Upload).
+- **Settings.** The Preferences window now has an **Editor font** choice and a
+  **Serial Plotter values** format: Auto (comma, space or tab, as in 1.8.19),
+  comma, semicolon, space, tab or a custom separator. Labels can be written as
+  `name:value` or `name=value`.
 - **arm64 native helpers.** Serial port discovery (libserialport), the Serial
   Monitor (jSSC 2.9.6) and Auto Format (Artistic Style) are rebuilt for arm64
   (`build/macosx/native-arm64/build.sh`).
