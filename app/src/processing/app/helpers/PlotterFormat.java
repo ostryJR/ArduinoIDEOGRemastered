@@ -117,4 +117,73 @@ public class PlotterFormat {
     refresh();
     return cachedLabels.split(field);
   }
+
+  /** Longest label shown in the legend. */
+  public static final int MAX_LABEL = 32;
+
+  /**
+   * Parses one value field.
+   *
+   * @return the value, {@link Double#NaN} for a field that is a number slot
+   * without a usable value (Arduino's <code>Serial.print(float)</code> prints
+   * <code>nan</code>, <code>inf</code> or <code>ovf</code>), or null if the
+   * field is text
+   */
+  public static Double parseValue(String field) {
+    String f = field.trim();
+    if (f.isEmpty()) {
+      return null;
+    }
+    String l = f.toLowerCase();
+    if (l.equals("nan") || l.equals("ovf") || l.equals("inf") || l.equals("-inf") || l.equals("+inf")) {
+      return Double.NaN;
+    }
+    try {
+      double v = Double.parseDouble(f);
+      return Double.isFinite(v) ? v : Double.NaN;
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Remastered: CSV-style header. A line whose fields are all text (no
+   * numbers, no <code>name:value</code> pairs) names the columns, so a sketch
+   * can print <code>Temp,Humidity</code> once in <code>setup()</code> and then
+   * only <code>21.5,40</code>.
+   * <p>
+   * In Auto mode a header that contains commas or tabs is split only on those,
+   * so names may contain spaces (<code>Temp C,Humidity %</code>).
+   *
+   * @return the column names, or null if the line is not a header
+   */
+  public static String[] headerLabels(String line) {
+    refresh();
+    String[] fields = cachedValues.split(line);
+    boolean any = false;
+    for (String f : fields) {
+      if (f.isEmpty()) {
+        continue;
+      }
+      if (f.indexOf(cachedLabelChar) >= 0 || parseValue(f) != null) {
+        return null;
+      }
+      any = true;
+    }
+    if (!any) {
+      return null;
+    }
+    if (separator() == Separator.AUTO) {
+      if (line.indexOf(',') >= 0) {
+        fields = line.split("\\s*,\\s*");
+      } else if (line.indexOf('\t') >= 0) {
+        fields = line.split("\\s*\\t\\s*");
+      }
+    }
+    for (int i = 0; i < fields.length; i++) {
+      String f = fields[i].trim();
+      fields[i] = f.length() > MAX_LABEL ? f.substring(0, MAX_LABEL) : f;
+    }
+    return fields;
+  }
 }

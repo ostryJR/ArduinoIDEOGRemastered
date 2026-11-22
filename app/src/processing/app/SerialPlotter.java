@@ -33,7 +33,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 
 import static processing.app.I18n.tr;
@@ -44,6 +43,7 @@ public class SerialPlotter extends AbstractMonitor {
   private JComboBox<String> serialRates;
   private Serial serial;
   private int serialRate, xCount;
+  private int dataColumns; // fields in the last data line, 0 before any data
 
   private JLabel noLineEndingAlert;
   private JTextField textField;
@@ -68,12 +68,17 @@ public class SerialPlotter extends AbstractMonitor {
       g.setColor(color);
       g.setStroke(new BasicStroke(1.0f));
 
-      for (int i = 0; i < buffer.size() - 1; ++i) {
-        g.drawLine(
-          (int) (i * xstep), (int) transformY(buffer.get(i), minY, rangeY, height),
-          (int) ((i + 1) * xstep), (int) transformY(buffer.get(i + 1), minY, rangeY, height)
-        );
+      // Remastered: one float path instead of int-rounded segments, so
+      // curves are smooth on Retina
+      if (buffer.size() < 2) {
+        return;
       }
+      java.awt.geom.Path2D.Float path = new java.awt.geom.Path2D.Float();
+      path.moveTo(0, transformY(buffer.get(0), minY, rangeY, height));
+      for (int i = 1; i < buffer.size(); ++i) {
+        path.lineTo(i * xstep, transformY(buffer.get(i), minY, rangeY, height));
+      }
+      g.draw(path);
     }
 
     private float transformY(double rawY, double minY, double rangeY, double height) {
@@ -194,14 +199,17 @@ public class SerialPlotter extends AbstractMonitor {
       // draw major x axis
       g.drawLine(xOffset, (int) transformY(zeroTick), bounds.width - xPadding, (int)transformY(zeroTick));
         
-      g.setTransform(AffineTransform.getTranslateInstance(xOffset, 0));
+      // Remastered: translate, don't replace the transform (that dropped the
+      // Retina 2x scale, so curves and legend were drawn at half size)
+      g.translate(xOffset, 0);
       float xstep = (float) (bounds.width - xOffset - xPadding) / (float) BUFFER_CAPACITY;
 
       // draw legend
       int legendXOffset = 0;
       for(int i = 0; i < graphs.size(); ++i) {
         graphs.get(i).paint(g, xstep, minY, maxY, rangeY, bounds.height);
-        if(graphs.size() > 1) {
+        String name = graphs.get(i).label;
+        if(graphs.size() > 1 || (name != null && !name.isEmpty())) {
           //draw legend rectangle
           g.fillRect(10 + legendXOffset, 10, 10, 10);
           legendXOffset += 13;
@@ -397,7 +405,6 @@ public class SerialPlotter extends AbstractMonitor {
       if (linebreak == -1) {
         break;
       }
-      xCount++;
       String line = messageBuffer.substring(0, linebreak);
       messageBuffer.delete(0, linebreak + 1);
 
@@ -406,71 +413,55 @@ public class SerialPlotter extends AbstractMonitor {
         // the line only contained trimmable characters
         continue;
       }
-      // Remastered: separators are configurable (Preferences > Serial Plotter)
-      String[] parts = PlotterFormat.splitValues(line);
-      if(parts.length == 0) {
+
+      // Remastered: CSV-style header line ("Temp,Humidity") names the columns
+      // once; it is not a sample, so it doesn't advance the x axis. Once data
+      // flows, a shorter text line is a debug message, not a new header.
+      String[] header = PlotterFormat.headerLabels(line);
+      if (header != null) {
+        if (header.length < dataColumns) {
+          continue;
+        }
+        for (int i = 0; i < header.length; i++) {
+          graph(i).label = header[i];
+        }
         continue;
       }
 
-      int validParts = 0;
-      int validLabels = 0;
-      for(int i = 0; i < parts.length; ++i) {
-        Double value = null;
-        String label = null;
-        
-        // column formated name value pair
-        if(PlotterFormat.hasLabel(parts[i])) {
-          // get label
-          String[] subString = PlotterFormat.splitLabel(parts[i]);
-            
-          if(subString.length > 0) {
-            int labelLength = subString[0].length();
-              
-            if(labelLength > 32) {
-                labelLength = 32;
-            }
-            label = subString[0].substring(0, labelLength);
-          } else {
-            label = "";
-          }
-            
-          if(subString.length > 1) {
-            parts[i] = subString[1];
-          } else {
-            parts[i] = "";
-          }
-        }
+      xCount++;
+      // Remastered: separators are configurable (Preferences > Serial Plotter)
+      String[] parts = PlotterFormat.splitValues(line);
+      dataColumns = parts.length;
 
-        try {
-          value = Double.valueOf(parts[i]);
-        } catch (NumberFormatException e) {
-          // ignored
-        }
-        //CSV header
-        if(label == null && value == null) {
-          label = parts[i];
-        }
-        
-        if(value != null) {
-          if(validParts >= graphs.size()) {
-            graphs.add(new Graph(validParts));
+      // Each field is one column. A field may be a plain value or a
+      // name:value pair; text (or nan/inf) in a data line leaves a gap in its
+      // column instead of renaming it.
+      for (int col = 0; col < parts.length; ++col) {
+        String field = parts[col];
+        if (PlotterFormat.hasLabel(field)) {
+          String[] sub = PlotterFormat.splitLabel(field);
+          String label = sub.length > 0 ? sub[0] : "";
+          if (label.length() > PlotterFormat.MAX_LABEL) {
+            label = label.substring(0, PlotterFormat.MAX_LABEL);
           }
-          graphs.get(validParts).buffer.add(value);
-          validParts++;
+          graph(col).label = label;
+          field = sub.length > 1 ? sub[1] : "";
         }
-        if(label != null) {
-          if(validLabels >= graphs.size()) {
-            graphs.add(new Graph(validLabels));
-          }
-          graphs.get(validLabels).label = label;
-          validLabels++;
+        Double value = PlotterFormat.parseValue(field);
+        if (value != null && !value.isNaN()) {
+          graph(col).buffer.add(value);
         }
-        if(validParts > validLabels) validLabels = validParts;
-        else if(validLabels > validParts) validParts = validLabels;
       }
     }
 
     SwingUtilities.invokeLater(SerialPlotter.this::repaint);
+  }
+
+  private Graph graph(int col) {
+    while (graphs.size() <= col) {
+      graphs.add(new Graph(graphs.size()));
+    }
+    return graphs.get(col);
   }
 
   public void open() throws Exception {

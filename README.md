@@ -41,6 +41,13 @@ Compared with upstream 1.8.19:
   **Serial Plotter values** format: Auto (comma, space or tab, as in 1.8.19),
   comma, semicolon, space, tab or a custom separator. Labels can be written as
   `name:value` or `name=value`.
+- **Serial Plotter, CSV style.** Print a header line once, e.g.
+  `Serial.println("Temp C,Humidity");` in `setup()`, then only the values
+  (`21.5,40`). The header names the columns without becoming a sample. Names may
+  contain spaces. Later text lines such as debug messages, and `nan`/`inf`
+  values, no longer rename columns; a bad value leaves a gap. On Retina the
+  curves and legend are now drawn at full resolution (in 1.8.19 they were drawn
+  at half scale).
 - **arm64 native helpers.** Serial port discovery (libserialport), the Serial
   Monitor (jSSC 2.9.6) and Auto Format (Artistic Style) are rebuilt for arm64
   (`build/macosx/native-arm64/build.sh`).

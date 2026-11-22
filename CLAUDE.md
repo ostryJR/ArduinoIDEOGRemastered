@@ -58,6 +58,10 @@ The feature list is in README.md.
 - **GUI testing without accessibility rights:** osascript/Robot keystrokes are silently dropped. Instead run a scratch
   harness JVM that builds a `SketchTextArea` from `app/pde.jar` (set `APP_DIR` to the bundle's `Contents/app`, init
   `PreferencesData`, reflect `Theme.init`), dispatches `KeyEvent`s in-process and screenshots its windows.
+- **Plotter CSV header:** `PlotterFormat.headerLabels()`. A line with only text fields (no numbers, no `name:value`) is a
+  header: it labels columns and doesn't advance `xCount`. After data has arrived, a header is ignored if it has fewer
+  fields than the last data line (that's a debug message). Each field is its own column; `nan`/`inf`/`ovf`/text in a
+  data line leaves a gap. Paint uses `g.translate`, not `setTransform`, because the latter dropped the Retina scale.
 - **Board menu:** it vanishing from Tools while the window is unfocused is upstream behavior (`removeOnWindowDeactivation`), not a bug.
 
 ## Working with the user
@@ -67,7 +71,7 @@ The feature list is in README.md.
 ## Open items
 - **Untested:**
   - uploading native-GCC firmware to the Feather M0 (OpenDrop)
-  - the Serial Plotter with live data in the new separator modes
+  - the Serial Plotter with live data in the new separator modes and with a CSV header (verified only in a harness that calls `message()`)
   - a visual check of the Preferences Remastered tab (now also has the autocomplete checkbox)
   - autocomplete typed for real in the bundled app (verified only in the harness above). In the harness's first run
     Enter once inserted a newline instead of accepting; not reproducible in 4 later runs — watch for it.
