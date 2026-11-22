@@ -50,7 +50,7 @@ public class BaseNoGui {
    * {@link #VERSION_NAME}. VERSION_NAME and REVISION stay at upstream's values
    * because cores, libraries and 3rd party installers depend on them.
    */
-  public static final String REMASTER_RELEASE = "R1.1";
+  public static final String REMASTER_RELEASE = "R1.1.1";
   public static final String EDITION_NAME = "Remastered";
   /** e.g. "1.8.19-R1" */
   public static final String REMASTER_VERSION = VERSION_NAME + "-" + REMASTER_RELEASE;

@@ -6,7 +6,7 @@
 > The original IDE is by Arduino and its community
 > (see [arduino.cc/credits](https://www.arduino.cc/credits)).
 
-**Current release: 1.8.19-R1.1.** That's upstream 1.8.19 plus remaster release R1.1.
+**Current release: 1.8.19-R1.1.1.** That's upstream 1.8.19 plus remaster release R1.1.1.
 
 The remaster keeps everything you know from 1.8: the same look, menus,
 sketches, boards and libraries. It rebuilds the IDE to run natively on Apple
@@ -75,7 +75,7 @@ Compared with upstream 1.8.19:
   on arm64.
 
 - **Remastered branding.** The app is named "Arduino Remastered" and the window
-  title reads "Arduino 1.8.19-R1.1 Remastered". The splash and About screens
+  title reads "Arduino 1.8.19-R1.1.1 Remastered". The splash and About screens
   credit the remaster, and the icon carries an orange R tag.
 
 ## Build (macOS arm64)
@@ -92,7 +92,7 @@ that path with `ARDUINO_SOURCE_APP`.
 
 ## Versioning
 
-Releases are named `<upstream version>-R<n>[.<m>]`, for example `1.8.19-R1.1` (a minor remaster update adds `.<m>`). The IDE
+Releases are named `<upstream version>-R<n>[.<m>[.<p>]]`, for example `1.8.19-R1.1` (a minor remaster update adds `.<m>`, a small fix `.<p>`). The IDE
 still reports `1.8.19` (`runtime.ide.version=10819`) to board cores and
 libraries so that they keep working exactly as they do in upstream.
 
